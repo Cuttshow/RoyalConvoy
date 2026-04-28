@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Royal Convoy</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Georgia,serif;background:#F2E6C8;touch-action:manipulation;display:flex;justify-content:center;align-items:flex-start;min-height:100vh}
+#game-wrap{width:100%;max-width:960px;height:100vh;min-height:560px}#game{display:grid;grid-template-columns:1fr 188px;grid-template-rows:auto 1fr 120px;gap:7px;padding:8px;height:100%;min-height:560px}
+#header{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid #A07820;padding-bottom:7px}
+#header h1{font-size:17px;font-weight:700;color:#5C3D0A;letter-spacing:2px}
+#header .sub{font-size:9px;color:#8A6030;letter-spacing:1px}
+#board-col{grid-column:1;grid-row:2;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+#sidebar{grid-column:2;grid-row:2/4;display:flex;flex-direction:column;gap:6px;overflow-y:auto}
+#controls-row{grid-column:1;grid-row:3;display:flex;flex-direction:column;gap:4px;position:relative;flex-shrink:0;min-height:120px;padding:4px 0}
+#board-wrap{flex:1;min-height:0;display:flex;flex-direction:column}
+#col-labels{display:grid;grid-template-columns:22px repeat(5,1fr);gap:2px;margin-bottom:2px;flex-shrink:0}
+.col-label{text-align:center;font-size:clamp(7px,1vh,10px);font-weight:700;color:#8A6030}
+#board-inner{display:grid;grid-template-columns:22px 1fr;gap:2px;flex:1;min-height:0}
+#row-labels{display:grid;grid-template-rows:repeat(16,1fr);gap:2px}
+.row-label{display:flex;align-items:center;justify-content:flex-end;font-size:clamp(6px,.9vh,9px);font-weight:700;color:#8A6030;padding-right:2px}
+#board-grid{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(16,1fr);gap:2px;min-height:0}
+.cell{background:#E8D4A0;border:1.5px solid #C4A050;border-radius:4px;display:flex;align-items:center;justify-content:center;position:relative;cursor:default;min-width:0;min-height:0;overflow:visible}
+.cell.reroll{background:#E8EDD8;border-color:#6A8A2A}
+.cell.castle{background:#E0DDD8;border-color:#A0A098;border-width:2px}
+.cell.dest1{background:#C8D8F0;border-color:#4A6AA0;border-width:2px}
+.cell.dest2{background:#F0C8C8;border-color:#A04A4A;border-width:2px}
+
+.cell.coin{background-color:#D9C99A;background-image:radial-gradient(ellipse at 20% 30%,rgba(180,150,80,.25) 0%,transparent 40%),radial-gradient(ellipse at 70% 70%,rgba(160,130,60,.2) 0%,transparent 35%),radial-gradient(ellipse at 50% 50%,rgba(200,175,110,.15) 0%,transparent 50%);border:1.5px solid #C4A050}
+.cell.blank{background:transparent;border-color:transparent;pointer-events:none;overflow:visible;z-index:1}
+.cell.sh{background-color:#D9C99A!important;background-image:radial-gradient(ellipse at 20% 30%,rgba(180,150,80,.25) 0%,transparent 40%),radial-gradient(ellipse at 70% 70%,rgba(160,130,60,.2) 0%,transparent 35%),radial-gradient(ellipse at 50% 50%,rgba(200,175,110,.15) 0%,transparent 50%);border-color:#C4A050!important}
+.cell.priv1{background:#D8E8F8;border-color:#4A7AAA}
+.cell.priv2{background:#F8D8D8;border-color:#AA4A4A}
+.cell.highlighted{background:#A8C8F0!important;border-color:#2A5A9A!important;border-width:2.5px!important;cursor:pointer}
+.cell.animating{outline:2px solid #C8A030;outline-offset:-2px;z-index:5}
+.cell-icon{font-size:clamp(12px,2.2vh,24px);opacity:.55;pointer-events:none;user-select:none}
+.cell-lbl{font-size:clamp(4px,.6vh,7px);color:#8A6030;position:absolute;bottom:1px;width:100%;text-align:center;pointer-events:none;font-family:Georgia,serif}
+.piece{width:clamp(22px,3.2vh,44px);height:clamp(22px,3.2vh,44px);border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;position:absolute;z-index:2;overflow:hidden;padding:0;background:transparent}
+.piece.p1{border-color:#4A7AAA}.piece.p2{border-color:#AA4A4A}
+.piece.sel-board{outline:3px solid #4A6AA0;outline-offset:2px}
+
+.piece.sh-brk{outline:2px solid #AA3A2A;outline-offset:2px}
+.piece.roy-prot{outline:2px solid #C8A030;outline-offset:2px}
+.piece.clickable{cursor:pointer}
+.pp{background:#F2E6C8;border:1.5px solid #A07820;border-radius:6px;padding:7px 9px}
+.pp.active{border:2px solid #4A6AA0;background:#EAD8B0}
+.pp h3{font-size:10px;font-weight:700;margin-bottom:4px;color:#5C3D0A;letter-spacing:1px}
+.tok-row{display:flex;gap:3px;flex-wrap:wrap}
+.tok-wrap{display:flex;flex-direction:column;align-items:center;gap:1px}
+.bt{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:default;transition:transform .1s;position:relative;overflow:hidden;padding:0;background:transparent}
+.bt.on-bench{opacity:1}.bt.on-board{opacity:.4;border-style:dashed}.bt.fin{opacity:.15;border-style:dotted}
+.bt.movable{cursor:pointer;box-shadow:0 0 0 2px #4A7AAA}.bt.movable:hover{transform:scale(1.1)}.bt.selected{box-shadow:0 0 0 3px #2A5A8A}
+.no-x{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border-radius:50%}
+.tok-lbl{font-size:7px;color:#8A6030;text-align:center;font-family:Georgia,serif}
+.tok-lbl.dim{opacity:.5}
+.stat-row{font-size:11px;color:#5C3D0A;margin-top:5px;display:flex;gap:6px;font-family:Georgia,serif;font-weight:700;letter-spacing:0.5px}
+.stat-v{font-weight:700;color:#5C3D0A}
+.crack{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border-radius:50%}
+
+#cp h4{font-size:9px;font-weight:700;color:#7B5E00;margin-bottom:5px;font-family:Georgia,serif;letter-spacing:1px}
+#coin-spend-row{display:flex;align-items:center;gap:4px;margin-bottom:5px}
+.ca{width:22px;height:22px;border-radius:4px;border:1px solid #C4A030;background:#F5EDD6;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#7B5E00;font-family:Georgia,serif}
+.ca:disabled{opacity:.3;cursor:default}
+#csv{font-size:15px;font-weight:700;color:#7B5E00;min-width:18px;text-align:center;font-family:Georgia,serif}
+#csp-btns{display:flex;gap:4px}
+
+.leg{background:#F2E6C8;border:1.5px solid #A07820;border-radius:6px;padding:7px 9px;font-size:10px;color:#8A6030;font-family:Georgia,serif}
+.leg h4{font-size:9px;font-weight:700;color:#5C3D0A;margin-bottom:4px;letter-spacing:1px}
+.li{display:flex;align-items:center;gap:4px;margin-bottom:2px}
+.ld{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.dice-area{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.dice-pair{display:flex;gap:4px}
+.die{width:60px;height:60px;background:#F5EDD6;border:2px solid #A07820;border-radius:7px;display:flex;align-items:center;justify-content:center}
+.die.pend{background:#EAD8B0;border-color:#C4A050}
+.die.inact{background:#E0D0A8;border-color:#C4A050;opacity:.35}
+.die.roll{animation:shk .3s ease}
+@keyframes shk{0%{transform:rotate(-7deg) scale(1.06)}30%{transform:rotate(5deg) scale(1.09)}60%{transform:rotate(-3deg) scale(1.04)}100%{transform:rotate(0) scale(1)}}
+.dn{font-size:26px;font-weight:700;color:#5C3D0A;font-family:Georgia,serif;line-height:1}
+.die.pend .dn{color:#C4A050}
+.dt{display:flex;flex-direction:column;align-items:center;justify-content:center;width:60px;height:60px;background:#EAD8B0;border:1.5px solid #C4A050;border-radius:7px;flex-shrink:0}
+.dtl{font-size:7px;color:#8A6030;font-family:Georgia,serif}
+.dtn{font-size:24px;font-weight:700;color:#5C3D0A;font-family:Georgia,serif;line-height:1}
+.dtn.bon{color:#3A6A10}.dtn.cs{color:#A07820}.dtn.chn{color:#AA3A2A}
+.dt.pend .dtn{color:#C4A050;font-size:13px}
+#sw{position:relative;width:100%}
+#st{background:#EAD8B0;border:1.5px solid #C4A050;border-radius:5px;padding:5px 24px 5px 9px;font-size:10px;color:#8A6030;min-height:52px;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;font-family:Georgia,serif;cursor:pointer;user-select:none;overflow:hidden;width:100%}
+#st:hover{background:#F0D898}
+#btn-cog{padding:10px 14px;border-radius:5px;border:1.5px solid #A07820;background:#F5EDD6;color:#5C3D0A;font-size:12px;cursor:pointer;font-family:Georgia,serif;font-weight:700;white-space:nowrap;flex-shrink:0}
+#btn-cog:hover:not(:disabled){background:#F0D898}
+#btn-cog:disabled{opacity:.35;cursor:default}
+#csp-popup{display:none;position:absolute;bottom:calc(100% + 4px);left:0;right:0;background:#F5EDD6;border:1.5px solid #A07820;border-radius:6px;padding:14px 16px;z-index:25;box-shadow:0 -3px 12px rgba(90,60,10,.2);min-width:200px}
+#csp-popup.open{display:block}
+#st.chain{border-color:#AA3A2A;background:#F0D8C8}
+.st-row{display:flex;gap:5px;align-items:baseline;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;line-height:1.4}
+.cd-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:18px;font-weight:900;color:#fff;font-family:Georgia,serif;text-shadow:0 0 4px rgba(0,0,0,0.9),0 0 2px rgba(0,0,0,1);pointer-events:none;line-height:1;z-index:5}
+.st-row.p1{color:#2A5A8A}
+.st-row.cpu{color:#8A2A2A}
+.st-row .st-who{font-weight:700;font-size:9px;flex-shrink:0}
+.st-row .st-msg{color:#5C3D0A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ribbon-bottom{display:flex;gap:8px;align-items:center;width:100%}
+#chev{position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:9px;color:#A07820;pointer-events:none;transition:transform .2s}
+#chev.open{transform:translateY(-50%) rotate(180deg)}
+#hp{display:none;position:absolute;bottom:calc(100% + 4px);left:0;right:0;background:#F5EDD6;border:1.5px solid #A07820;border-radius:6px;padding:7px 9px;z-index:20;max-height:190px;overflow-y:auto;box-shadow:0 -2px 8px rgba(90,60,10,.15)}
+#hp.open{display:block}
+#hp h4{font-size:9px;font-weight:700;color:#5C3D0A;letter-spacing:1px;margin-bottom:5px;border-bottom:1px solid #C4A050;padding-bottom:3px;font-family:Georgia,serif}
+.he{display:flex;gap:5px;align-items:baseline;padding:2px 0;border-bottom:.5px solid #E0CA90;font-size:9px;font-family:Georgia,serif}
+.he:last-child{border-bottom:none}
+.hn{font-size:8px;color:#A07820;min-width:20px;flex-shrink:0}
+.hw{font-size:8px;font-weight:700;min-width:28px;flex-shrink:0}
+.hw.p1{color:#2A5A8A}.hw.cpu{color:#8A2A2A}
+.hm{color:#5C3D0A;line-height:1.4}
+button.act{padding:10px 16px;border-radius:5px;border:1.5px solid #A07820;background:#F5EDD6;color:#5C3D0A;font-size:12px;cursor:pointer;font-family:Georgia,serif;font-weight:700;flex-shrink:0}
+button.act:hover{background:#F0D898}button.act:disabled{opacity:.35;cursor:default}
+button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.pri:hover{background:#7A5A20}
+#gold-flash{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#5C3D0A;color:#F5EDD6;font-family:Georgia,serif;font-size:15px;font-weight:700;padding:12px 24px;border-radius:8px;border:2px solid #C8A030;z-index:200;pointer-events:none;white-space:nowrap;letter-spacing:1px}
+#gold-flash.show{display:block}
+#wo{display:none;position:fixed;inset:0;background:rgba(60,32,8,.7);z-index:100;align-items:center;justify-content:center;overflow-y:auto;padding:16px}
+#stats-screen{display:none;position:fixed;inset:0;background:rgba(60,32,8,.92);z-index:101;overflow-y:auto;padding:14px}
+#stats-screen h2{font-size:16px;font-weight:700;color:#F5EDD6;text-align:center;letter-spacing:2px;margin-bottom:10px;font-family:Georgia,serif}
+#stats-screen .ss-sub{font-size:10px;color:#C4A050;text-align:center;margin-bottom:14px;letter-spacing:1px;font-family:Georgia,serif}
+#stats-screen table{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:12px;background:#F5EDD6;border-radius:7px;overflow:hidden}
+#stats-screen thead tr{background:#5C3D0A}
+#stats-screen th{padding:5px 6px;text-align:center;font-weight:700;color:#F5EDD6;font-family:Georgia,serif;font-size:9px}
+#stats-screen th:first-child{text-align:left}
+#stats-screen td{padding:4px 6px;border-bottom:.5px solid #E8D8A0;text-align:center;color:#3A2808;font-family:Georgia,serif}
+#stats-screen td:first-child{text-align:left;font-weight:700}
+#stats-screen tr:last-child td{border-bottom:none}
+#stats-screen tr:nth-child(even){background:#FAF0E0}
+#stats-screen .team-head{font-size:12px;font-weight:700;margin-bottom:5px;font-family:Georgia,serif;padding:3px 0;border-bottom:1.5px solid #C4A050}
+#stats-screen .p1-head{color:#2A5A8A}
+#stats-screen .cpu-head{color:#AA4A4A}
+#stats-screen .ss-btn{display:block;width:100%;max-width:200px;margin:0 auto;padding:8px;background:#5C3D0A;color:#F5EDD6;border:none;border-radius:6px;font-family:Georgia,serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px}
+#wo.show{display:flex}
+#wb{background:#F5EDD6;border:3px solid #A07820;border-radius:10px;padding:26px 34px;text-align:center;max-width:280px;width:90%}
+#wb h2{font-size:20px;font-weight:700;color:#5C3D0A;margin-bottom:7px;font-family:Georgia,serif;letter-spacing:2px}
+#wb p{font-size:11px;color:#8A6030;margin-bottom:16px;font-family:Georgia,serif}
+.cpub{display:inline-block;font-size:7px;background:#F0C8C8;color:#7A2A2A;border:1px solid #AA4A4A;border-radius:3px;padding:1px 3px;margin-left:2px;vertical-align:middle;font-family:sans-serif}
+#mode-modal{display:none;position:fixed;inset:0;background:rgba(60,32,8,.75);z-index:200;align-items:center;justify-content:center}
+#mode-modal.show{display:flex}
+#mode-box{background:#F5EDD6;border:2px solid #A07820;border-radius:8px;padding:28px 32px;text-align:center;max-width:320px;width:90%}
+#mode-box h2{font-family:Georgia,serif;font-size:16px;font-weight:700;color:#3A2808;margin-bottom:6px;letter-spacing:1px}
+#mode-box p{font-family:Georgia,serif;font-size:12px;color:#8A6030;margin-bottom:20px}
+.mode-btn{display:block;width:100%;padding:11px;margin-bottom:10px;border-radius:6px;border:1.5px solid #A07820;background:#F5EDD6;color:#5C3D0A;font-size:13px;font-weight:700;font-family:Georgia,serif;cursor:pointer;letter-spacing:.5px}
+.mode-btn:hover{background:#EAD8B0}
+.mode-btn:last-child{margin-bottom:0}
+#coin-modal{display:none;position:fixed;inset:0;background:rgba(60,32,8,.75);z-index:201;align-items:center;justify-content:center}
+#coin-modal.show{display:flex}
+#coin-box{background:#F5EDD6;border:2px solid #A07820;border-radius:8px;padding:28px 32px;text-align:center;max-width:300px;width:90%}
+#coin-box h2{font-family:Georgia,serif;font-size:15px;font-weight:700;color:#3A2808;margin-bottom:16px;letter-spacing:1px}
+#coin-emoji{font-size:52px;display:block;margin:0 auto 16px;line-height:1}
+#coin-emoji.flip{animation:coinflip 1.4s ease-in-out forwards}
+@keyframes coinflip{
+  0%  {transform:scaleX(1)   translateY(0px);  opacity:1}
+  10% {transform:scaleX(0.1) translateY(-8px); opacity:.8}
+  20% {transform:scaleX(1)   translateY(-18px);opacity:1}
+  30% {transform:scaleX(0.1) translateY(-28px);opacity:.8}
+  40% {transform:scaleX(1)   translateY(-20px);opacity:1}
+  50% {transform:scaleX(0.1) translateY(-12px);opacity:.8}
+  60% {transform:scaleX(1)   translateY(-6px); opacity:1}
+  70% {transform:scaleX(0.1) translateY(-2px); opacity:.8}
+  80% {transform:scaleX(1)   translateY(0px);  opacity:1}
+  90% {transform:scaleX(0.1) translateY(0px);  opacity:.8}
+  100%{transform:scaleX(1)   translateY(0px);  opacity:1}
+}
+#coin-result{font-family:Georgia,serif;font-size:14px;color:#5C3D0A;margin-bottom:20px;min-height:22px;font-weight:700}
+#coin-go{display:none;padding:10px 28px;border-radius:6px;border:1.5px solid #A07820;background:#5C3D0A;color:#F5EDD6;font-size:13px;font-weight:700;font-family:Georgia,serif;cursor:pointer;letter-spacing:.5px}
+#coin-go:hover{background:#3A2808}
+</style>
+</head>
+<body>
+<div id="wo"><div id="wb">
+  <h2 id="wt"></h2><p id="ws"></p>
+  <div style="color:#A07820;font-size:11px">✦ ✦ ✦</div><br>
+  <button class="act pri" onclick="newGame()">Play Again</button>
+</div></div>
+
+<div id="stats-screen"></div>
+
+<div id="coin-modal">
+  <div id="coin-box">
+    <h2>⚔ THE COIN IS TOSSED ⚔</h2>
+    <span id="coin-emoji">🪙</span>
+    <div id="coin-result"></div>
+    <button id="coin-go" onclick="coinDismiss()">Let's Go!</button>
+  </div>
+</div>
+<div id="mode-modal">
+  <div id="mode-box">
+    <h2>⚔ ROYAL CONVOY ⚔</h2>
+    <p>Choose your opponent</p>
+    <button class="mode-btn" onclick="startGame(false)">⚔ Player vs CPU</button>
+    <button class="mode-btn" onclick="startGame(true)">👥 Player vs Player</button>
+  </div>
+</div>
+<div id="gold-flash">✦ CPU spends gold to move! ✦</div>
+<div id="game-wrap"><div id="game">
+  <div id="header" style="position:relative;text-align:center">
+    <div style="flex:1"><h1>⚔ ROYAL CONVOY ⚔</h1><div class="sub">✦ Escort the Royals safely across the Kingdom ✦</div></div>
+    <button class="act" onclick="newGame()" style="position:absolute;right:0;top:50%;transform:translateY(-50%)">New Game</button>
+  </div>
+  <div id="board-col">
+    <div id="board-wrap">
+      <div id="col-labels">
+        <div></div>
+        <div class="col-label">A</div><div class="col-label">B</div><div class="col-label">C</div>
+        <div class="col-label">D</div><div class="col-label">E</div>
+      </div>
+      <div id="board-inner"><div id="row-labels"></div><div id="board-grid"></div></div>
+    </div>
+  </div>
+  <div id="sidebar">
+    <div class="pp" id="pp1">
+      <h3>⚜ PLAYER <span style="font-size:8px;font-weight:400;color:#8A6030">(You)</span></h3>
+      <div class="tok-row" id="bench1"></div>
+      <div class="stat-row">✦ Gold: <span class="stat-v" id="co1">0</span></div>
+    </div>
+
+    <div class="pp" id="pp2">
+      <h3>⚜ ENEMY <span class="cpub" id="p2-label">CPU</span></h3>
+      <div class="tok-row" id="bench2"></div>
+      <div class="stat-row">✦ Gold: <span class="stat-v" id="co2">0</span></div>
+    </div>
+    <div class="leg">
+      <h4>LEGEND</h4>
+      <div class="li"><div class="ld" style="background:#D8E8F8;border:1.5px solid #4A7AAA"></div>P1 private</div>
+      <div class="li"><div class="ld" style="background:#F8D8D8;border:1.5px solid #AA4A4A"></div>Enemy private</div>
+      <div class="li"><div class="ld" style="background:#E8EDD8;border:1.5px solid #6A8A2A"></div>Roll again 🎲</div>
+      <div class="li"><div class="ld" style="background:#E0DDD8;border:1.5px solid #A0A098"></div>Castle 🏰</div>
+      <div class="li"><div class="ld" style="background:#F0DDA8;border:1.5px solid #C4A030"></div>Gold coin 💰</div>
+      <div class="li"><div class="ld" style="background:#A8C8F0;border:2.5px solid #2A5A9A"></div>Reachable</div>
+      <div style="margin-top:5px;line-height:2.0;font-size:10px">
+        Knight: +2 Steps<br>Shield: Absorbs 1st Hit<br>Siege: Storms Castles<br>
+        Thief: Moves↑, Steals Coin<br>Archer: Range-1 Kill<br>
+        Merchant: +1💰 Castle +2💰 Gold<br>Sword: Capture→Chain Attack<br>
+        Soldier: Unlimited Lives<br>King/Queen: −1 Step<br>
+      </div>
+    </div>
+  </div>
+  <div id="controls-row">
+    <div id="sw">
+      <div id="st" onclick="toggleHP()"></div>
+      <span id="chev">▲</span>
+      <div id="hp"><h4>✦ ROYAL CHRONICLE</h4><div id="hl"></div></div>
+    </div>
+    <div id="ribbon-bottom">
+      <div class="dice-area">
+        <div class="dice-pair">
+          <div class="die pend" id="d1"><span class="dn" id="d1n">—</span></div>
+          <div class="die pend" id="d2"><span class="dn" id="d2n">—</span></div>
+        </div>
+        <div class="dt pend" id="dtb"><span class="dtl">total</span><span class="dtn" id="dtn">—</span></div>
+      </div>
+      <button class="act pri" id="btn-roll" onclick="roll()">Roll Dice</button>
+      <div style="position:relative;flex-shrink:0">
+        <button id="btn-cog" onclick="openCS()" disabled>💰 Spend Gold</button>
+        <div id="csp-popup">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <button class="ca" id="cm" onclick="adjCS(-1)">−</button>
+            <span id="csv" style="font-size:16px;font-weight:700;color:#7B5E00;min-width:20px;text-align:center">1</span>
+            <button class="ca" id="cp2" onclick="adjCS(1)">+</button>
+            <span style="font-size:10px;color:#7B5E00">= <span id="cst">1</span> steps</span>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="act pri" onclick="confirmCS()" style="font-size:10px;padding:5px 10px">March!</button>
+            <button class="act" onclick="cancelCS()" style="font-size:10px;padding:5px 10px">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<script>
+// ═══════════════════════════════════════════
+// BOARD1 — 5 cols × 16 rows
+// ═══════════════════════════════════════════
+const COLS=5,ROWS=16;
+const ix=(c,r)=>(r-1)*5+(c-1);
+const SP1=ix(1,1),DP1=ix(1,16),SP2=ix(5,1),DP2=ix(5,16);
+
+// Private: C1R1-4,C1R14-16 / C5R1-4,C5R14-16
+const PRV1=new Set([ix(1,1),ix(1,2),ix(1,3),ix(1,4),ix(1,14),ix(1,15),ix(1,16)]);
+const PRV2=new Set([ix(5,1),ix(5,2),ix(5,3),ix(5,4),ix(5,14),ix(5,15),ix(5,16)]);
+const CAS=new Set([ix(3,4),ix(4,9),ix(3,11)]);
+const RRL=new Set([ix(1,3),ix(5,3),ix(3,8)]);
+const COI=new Set([ix(2,8),ix(3,13)]);
+
+const ACT=new Set([
+  ix(1,1),ix(1,2),ix(1,3),ix(1,4),ix(1,12),ix(1,13),ix(1,14),ix(1,15),ix(1,16),
+  ix(5,1),ix(5,2),ix(5,3),ix(5,4),ix(5,12),ix(5,13),ix(5,14),ix(5,15),ix(5,16),
+  ix(2,4),ix(2,5),ix(2,6),ix(2,8),ix(2,11),ix(2,13),
+  ix(4,4),ix(4,5),ix(4,6),ix(4,9),ix(4,11),ix(4,13),
+  ix(3,4),ix(3,6),ix(3,7),ix(3,8),ix(3,9),ix(3,10),ix(3,11),ix(3,12),ix(3,13),
+  ix(1,11),ix(2,11),ix(3,11),ix(4,11),ix(5,11)
+]);
+
+const CT={};
+for(let i=0;i<ROWS*COLS;i++) CT[i]='blank';
+ACT.forEach(i=>CT[i]='sh');
+PRV1.forEach(i=>CT[i]='p1'); PRV2.forEach(i=>CT[i]='p2');
+CAS.forEach(i=>CT[i]='ca'); RRL.forEach(i=>CT[i]='rr'); COI.forEach(i=>CT[i]='co');
+CT[SP1]='p1'; CT[DP1]='d1'; CT[SP2]='p2'; CT[DP2]='d2';
+
+const CC={};
+const COL_LETTERS=['a','b','c','d','e'];
+for(let r=1;r<=ROWS;r++) for(let c=1;c<=COLS;c++){const i=ix(c,r);if(ACT.has(i))CC[i]=COL_LETTERS[c-1].toUpperCase()+r;}
+
+// ═══════════════════════════════════════════
+// UNIT CONSTANTS
+// Kingsguard: knight, shield, siege, archer (NOT thief, NOT merchant)
+// ═══════════════════════════════════════════
+const KG=new Set(['knight','shield','siege','archer','sword','soldier']);
+const ROY=new Set(['king','queen']);
+const NROY=new Set(['knight','shield','siege','thief','archer','merchant','sword','soldier']);
+const NCS=new Set(['king','queen','merchant']); // cannot spend coins
+
+// ═══════════════════════════════════════════
+// SVG ICONS (compact inline versions)
+// ═══════════════════════════════════════════
+function svgKnight(c){const bg=c==='p1'?'#A8C4E0':'#E0A8A8',s=c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">🐴</text></svg>`;}
+function svgShield(c){const s=c==='p1'?'#4A7AAA':'#AA4A4A',b=c==='p1'?'#A8C4E0':'#E0A8A8';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${b}" stroke="${s}" stroke-width="1.5"/><path d="M18 6 L28 10 L28 20 Q28 28 18 32 Q8 28 8 20 L8 10 Z" fill="#3A6AA0" stroke="#1A4A80" stroke-width="1.5"/><rect x="15.5" y="13" width="5" height="14" rx="1" fill="#F2E6C8"/><rect x="10" y="18" width="16" height="4" rx="1" fill="#F2E6C8"/><circle cx="18" cy="20" r="3" fill="#C8A850" stroke="#8A7020" stroke-width="0.8"/><circle cx="18" cy="20" r="1.5" fill="#E8C870"/></svg>`;}
+function svgSiege(c){const s=c==='p1'?'#4A7AAA':'#AA4A4A',b=c==='p1'?'#A8C4E0':'#E0A8A8';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${b}" stroke="${s}" stroke-width="1.5"/><circle cx="7" cy="28" r="5" fill="none" stroke="#3A2808" stroke-width="1.5"/><circle cx="7" cy="28" r="1.5" fill="#5A3A10"/><line x1="7" y1="23" x2="7" y2="33" stroke="#5A3A10" stroke-width="1"/><line x1="2" y1="28" x2="12" y2="28" stroke="#5A3A10" stroke-width="1"/><circle cx="29" cy="28" r="5" fill="none" stroke="#3A2808" stroke-width="1.5"/><circle cx="29" cy="28" r="1.5" fill="#5A3A10"/><line x1="29" y1="23" x2="29" y2="33" stroke="#5A3A10" stroke-width="1"/><line x1="24" y1="28" x2="34" y2="28" stroke="#5A3A10" stroke-width="1"/><rect x="5" y="24" width="26" height="4" rx="1" fill="#9A7A3A" stroke="#5A3A10" stroke-width="1"/><line x1="12" y1="24" x2="12" y2="17" stroke="#8A6A2A" stroke-width="2" stroke-linecap="round"/><line x1="24" y1="24" x2="24" y2="17" stroke="#8A6A2A" stroke-width="2" stroke-linecap="round"/><circle cx="18" cy="17" r="2.5" fill="#6A4A18" stroke="#3A2808" stroke-width="1"/><line x1="18" y1="17" x2="7" y2="9" stroke="#8A6A2A" stroke-width="2.5" stroke-linecap="round"/><circle cx="7" cy="8" r="3.5" fill="#888780" stroke="#5F5E5A" stroke-width="1"/><line x1="18" y1="17" x2="26" y2="22" stroke="#8A6A2A" stroke-width="2" stroke-linecap="round"/><rect x="23" y="22" width="6" height="4" rx="1" fill="#5A4020" stroke="#3A2808" stroke-width="0.8"/></svg>`;}
+function svgThief(c){const bg=c==='p1'?'#A8C4E0':'#E0A8A8',s=c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">🗡️</text></svg>`;}
+function svgLongbow(c){const bg=c==='p1'?'#A8C4E0':'#E0A8A8',s=c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">🏹</text></svg>`;}
+function svgMerchant(c){const bg=c==='p1'?'#A8C4E0':'#E0A8A8',s=c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">🤠</text></svg>`;}
+function svgKing(c){const bg=c==='p1'?'#A8C4E0':'#E0A8A8',s=c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">🤴</text></svg>`;}
+function svgQueen(c){const bg=c==='p1'?'#A8C4E0':'#E0A8A8',s=c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">👸</text></svg>`;}
+
+function svgSword(c){const bg=c==='p1'?'#A8C4E0':'#E0A8A8',s=c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">⚔️</text></svg>`;}
+function svgSoldier(c){const bg=c==='p1'?'#A8C4E0':'#E0A8A8',s=c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">🚶</text></svg>`;}
+
+const UNITS=[
+  {t:'knight',l:'Knight',f:svgKnight},{t:'shield',l:'Shield',f:svgShield},
+  {t:'siege',l:'Siege',f:svgSiege},{t:'thief',l:'Thief',f:svgThief},
+  {t:'archer',l:'Archer',f:svgLongbow},{t:'merchant',l:'Merchant',f:svgMerchant},
+  {t:'sword',l:'Sword',f:svgSword},{t:'soldier',l:'Soldier',f:svgSoldier},
+  {t:'king',l:'King',f:svgKing},{t:'queen',l:'Queen',f:svgQueen}
+];
+
+const DF=[0,1,1,2,2,3];
+let G={}, histOpen=false;
+const rdie=()=>DF[Math.floor(Math.random()*6)];
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+
+
+// ═══════════════════════════════════════════
+// SOUND ENGINE (Web Audio API)
+// ═══════════════════════════════════════════
+let _ac=null;
+function ac(){
+  if(!_ac) _ac=new(window.AudioContext||window.webkitAudioContext)();
+  if(_ac.state==='suspended') _ac.resume();
+  return _ac;
+}
+function beep(freq,type,vol,attack,sustain,decay){
+  try{
+    const c=ac(),g=c.createGain(),o=c.createOscillator();
+    o.connect(g);g.connect(c.destination);
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    g.gain.setValueAtTime(0,c.currentTime);
+    g.gain.linearRampToValueAtTime(vol||0.3,c.currentTime+(attack||0.01));
+    g.gain.setValueAtTime(vol||0.3,c.currentTime+(attack||0.01)+(sustain||0.1));
+    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+(attack||0.01)+(sustain||0.1)+(decay||0.1));
+    o.start(c.currentTime); o.stop(c.currentTime+(attack||0.01)+(sustain||0.1)+(decay||0.1)+0.05);
+  }catch(e){}
+}
+function noise(vol,dur){
+  try{
+    const c=ac(),buf=c.createBuffer(1,c.sampleRate*dur,c.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1);
+    const src=c.createBufferSource(),g=c.createGain();
+    src.buffer=buf; src.connect(g); g.connect(c.destination);
+    g.gain.setValueAtTime(vol,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);
+    src.start(); src.stop(c.currentTime+dur+0.05);
+  }catch(e){}
+}
+const SFX={
+  roll:function(){
+    // Rattling dice: bursts of noise
+    noise(0.15,0.04);
+    setTimeout(function(){noise(0.12,0.03);},50);
+    setTimeout(function(){noise(0.10,0.03);},100);
+    setTimeout(function(){noise(0.08,0.04);},160);
+    setTimeout(function(){beep(180,'sine',0.15,0.01,0.05,0.1);},200);
+  },
+  step:function(){
+    // Soft footstep thud
+    beep(90+Math.random()*30,'sine',0.12,0.005,0.02,0.06);
+  },
+  capture:function(){
+    // Clash: sharp noise burst + low thud
+    noise(0.2,0.06);
+    beep(120,'sawtooth',0.2,0.005,0.04,0.15);
+    setTimeout(function(){beep(80,'sine',0.25,0.005,0.05,0.2);},40);
+  },
+  royalCapture:function(){
+    // dun-dun-DUN! — two short low hits then a dramatic sustained sting
+    // First "dun"
+    beep(220,'sawtooth',0.35,0.005,0.08,0.12);
+    noise(0.2,0.06);
+    // Second "dun"
+    setTimeout(function(){
+      beep(220,'sawtooth',0.35,0.005,0.08,0.12);
+      noise(0.2,0.06);
+    },320);
+    // Big "DUN!" — lower, louder, sustained with harmonics
+    setTimeout(function(){
+      beep(110,'sawtooth',0.45,0.005,0.35,0.6);
+      beep(165,'sawtooth',0.25,0.005,0.3,0.5);
+      beep(82,'sine',0.4,0.01,0.4,0.7);
+      noise(0.3,0.1);
+    },640);
+  },
+  coin:function(){
+    // Bright chime: two rising tones
+    beep(880,'sine',0.2,0.005,0.06,0.15);
+    setTimeout(function(){beep(1100,'sine',0.15,0.005,0.06,0.2);},80);
+  },
+  reroll:function(){
+    // Little upward flourish
+    beep(440,'sine',0.15,0.005,0.04,0.08);
+    setTimeout(function(){beep(550,'sine',0.15,0.005,0.04,0.08);},70);
+    setTimeout(function(){beep(660,'sine',0.18,0.005,0.06,0.12);},140);
+  },
+  castle:function(){
+    // Deep resonant tone
+    beep(130,'sine',0.25,0.02,0.15,0.4);
+    setTimeout(function(){beep(195,'sine',0.12,0.02,0.1,0.3);},30);
+  },
+  finish:function(){
+    // Triumphant fanfare: ascending arpeggio
+    const notes=[440,554,659,880];
+    notes.forEach(function(f,i){
+      setTimeout(function(){beep(f,'sine',0.25,0.01,0.08,0.15);},i*100);
+    });
+    setTimeout(function(){beep(880,'sine',0.3,0.01,0.2,0.3);},450);
+  },
+  shieldCrack:function(){
+    // Sharp crack: noise burst + dissonant tone
+    noise(0.25,0.05);
+    setTimeout(function(){beep(160,'sawtooth',0.2,0.005,0.03,0.2);},20);
+  },
+  win:function(){
+    // Victory fanfare
+    const notes=[523,659,784,1047];
+    notes.forEach(function(f,i){
+      setTimeout(function(){beep(f,'sine',0.25,0.01,0.1,0.15);},i*120);
+    });
+    setTimeout(function(){
+      beep(1047,'sine',0.3,0.01,0.3,0.4);
+      beep(784,'sine',0.2,0.01,0.3,0.4);
+    },550);
+  },
+  defeat:function(){
+    // Descending defeat sting
+    const notes=[523,415,330,262];
+    notes.forEach(function(f,i){
+      setTimeout(function(){beep(f,'sine',0.2,0.01,0.1,0.2);},i*150);
+    });
+  },
+  cpuCoin:function(){
+    // Coin purse jingle: quick sequence of high tones
+    [660,550,440,550].forEach(function(f,i){
+      setTimeout(function(){beep(f,'sine',0.15,0.005,0.04,0.08);},i*60);
+    });
+  }
+};
+// Unlock audio on first user interaction
+document.addEventListener('touchstart',function(){try{ac();}catch(e){}},{once:true});
+document.addEventListener('click',function(){try{ac();}catch(e){}},{once:true});
+
+// ═══════════════════════════════════════════
+// HISTORY
+// ═══════════════════════════════════════════
+function addH(who,msg){
+  G.hist.push({who,msg,n:G.hN});
+  if(G.hist.length>30) G.hist.shift();
+  drawH();
+}
+function drawH(){
+  const el=document.getElementById('hl');
+  if(!el) return;
+  el.innerHTML='';
+  [...G.hist].forEach(e=>{
+    const row=document.createElement('div'); row.className='he';
+    const n=document.createElement('span'); n.className='hn'; n.textContent='#'+e.n;
+    const w=document.createElement('span'); w.className='hw '+e.who; w.textContent=e.who==='p1'?'P1':(G&&G.p2human?'P2':'CPU');
+    const m=document.createElement('span'); m.className='hm'; m.textContent=e.msg;
+    row.appendChild(n); row.appendChild(w); row.appendChild(m); el.appendChild(row);
+  });
+}
+function toggleHP(){
+  histOpen=!histOpen;
+  document.getElementById('hp').classList.toggle('open',histOpen);
+  document.getElementById('chev').classList.toggle('open',histOpen);
+}
+function flashGold(cb){
+  const el=document.getElementById('gold-flash');
+  el.classList.add('show');
+  SFX.cpuCoin();
+  setTimeout(function(){el.classList.remove('show');cb();},1000);
+}
+document.addEventListener('click',function(e){
+  if(histOpen&&!e.target.closest('#sw')){
+    histOpen=false;
+    document.getElementById('hp').classList.remove('open');
+    document.getElementById('chev').classList.remove('open');
+  }
+});
+
+// ═══════════════════════════════════════════
+// GEOMETRY (all iterative — no recursion)
+// ═══════════════════════════════════════════
+function cRow(i){return Math.floor(i/COLS);}
+function cCol(i){return i%COLS;}
+
+function nbrs(cell,up){
+  const r=cRow(cell),col=cCol(cell),res=[];
+  const dn=cell+COLS,lt=cell-1,rt=cell+1,upc=cell-COLS;
+  if(r<ROWS-1&&ACT.has(dn)) res.push({cell:dn,dir:'D'});
+  if(col>0&&cRow(lt)===r&&ACT.has(lt)) res.push({cell:lt,dir:'L'});
+  if(col<COLS-1&&cRow(rt)===r&&ACT.has(rt)) res.push({cell:rt,dir:'R'});
+  if(up&&r>0&&ACT.has(upc)) res.push({cell:upc,dir:'U'});
+  return res;
+}
+function rev(a,b){return(a==='L'&&b==='R')||(a==='R'&&b==='L')||(a==='D'&&b==='U')||(a==='U'&&b==='D');}
+
+function oadj(idx){
+  const r=cRow(idx),col=cCol(idx),res=[];
+  if(r<ROWS-1&&ACT.has(idx+COLS)) res.push(idx+COLS);
+  if(r>0&&ACT.has(idx-COLS)) res.push(idx-COLS);
+  if(col>0&&cRow(idx-1)===r&&ACT.has(idx-1)) res.push(idx-1);
+  if(col<COLS-1&&cRow(idx+1)===r&&ACT.has(idx+1)) res.push(idx+1);
+  return res;
+}
+
+function isRoyProt(pid,cell){
+  return oadj(cell).some(c=>{const f=G.pl[pid].bench.find(t=>!t.done&&t.cell===c);return f&&KG.has(f.t);});
+}
+
+function abcn(sq,n,pid){
+  const opp=1-pid,vis=new Set([sq]);
+  let fr=[sq];
+  for(let s=0;s<=n;s++){
+    const nx=[];
+    for(const c of fr) for(const nb of oadj(c)) if(!vis.has(nb)){
+      vis.add(nb);
+      if(G.pl[opp].bench.find(t=>!t.done&&t.cell===nb&&NROY.has(t.t))) return false;
+      nx.push(nb);
+    }
+    fr=nx;
+  }
+  return true;
+}
+
+function bfsD(dest){
+  const d={},q=[dest]; d[dest]=0;
+  while(q.length){
+    const c=q.shift(),r=cRow(c);
+    for(const x of[c-COLS,c+COLS,c-1,c+1]){
+      if(x<0||x>=ROWS*COLS||!ACT.has(x)) continue;
+      if((x===c-1||x===c+1)&&cRow(x)!==r) continue;
+      if(d[x]===undefined){d[x]=d[c]+1;q.push(x);}
+    }
+  }
+  return d;
+}
+const D1=bfsD(DP1),D2=bfsD(DP2);
+function dtf(pid,cell){const d=pid===0?D1:D2;return d[cell]!==undefined?d[cell]:999;}
+
+function lbtg(lc){
+  // Archer: range-1, orthogonal adjacents only
+  return oadj(lc);
+}
+
+// ═══════════════════════════════════════════
+// PATHFINDING — iterative only
+// ═══════════════════════════════════════════
+function canLand(pid,tok,dest){
+  const opp=1-pid;
+  const fr=G.pl[pid].bench.filter(t=>!t.done&&t.id!==tok.id&&t.cell===dest);
+  const en=G.pl[opp].bench.filter(t=>!t.done&&t.cell===dest);
+  if(ROY.has(tok.t)) return en.length===0&&fr.length===0;
+  if(tok.t==='merchant') return fr.length+en.length<=1;
+  if(tok.t==='siege'){
+    const royEn=en.find(e=>ROY.has(e.t));
+    if(royEn&&isRoyProt(opp,dest)) return false;
+    return fr.length===0;
+  }
+  if(tok.t==='archer') return en.length===0&&fr.length===0;
+  if(fr.length>0) return false;
+  // Protected ROY square: non-ROY attacker cannot land
+  const royEnemy=en.find(e=>ROY.has(e.t));
+  if(royEnemy&&isRoyProt(opp,dest)) return false;
+  if(CAS.has(dest)&&en.length>0) return false;
+  return true;
+}
+
+function eRoll(pid,tok,base){
+  if(tok.t==='knight') return base+2;
+  if(ROY.has(tok.t)) return base-1;
+  return base;
+}
+
+// Iterative reachability (explicit stack, no call-stack recursion)
+function reach(pid,tok,steps,bench){
+  if(steps<=0) return new Set();
+  const up=tok.t==='thief', opp=pid===0?PRV2:PRV1;
+  const fin=pid===0?DP1:DP2, src=bench?(pid===0?SP1:SP2):tok.cell;
+  const dests=new Set(), vis=new Set();
+  const stk=[];
+  if(bench){
+    stk.push({cell:src,left:steps-1,ld:''});
+  } else {
+    stk.push({cell:src,left:steps,ld:''});
+  }
+  while(stk.length){
+    const{cell,left,ld}=stk.pop();
+    const key=cell+','+left+','+ld;
+    if(vis.has(key)) continue; vis.add(key);
+    if(left===0){if(canLand(pid,tok,cell))dests.add(cell);continue;}
+    for(const{cell:nx,dir}of nbrs(cell,up)){
+      if(rev(ld,dir)||opp.has(nx)) continue;
+      stk.push({cell:nx,left:left-1,ld:dir});
+    }
+  }
+  // Knight generous exit: BFS to finish
+  if(tok.t==='knight'){
+    const bq=[src],bd=new Map([[src,bench?1:0]]);
+    while(bq.length){
+      const c=bq.shift(),d=bd.get(c);
+      if(c===fin){if(steps>=d)dests.add(fin);break;}
+      for(const{cell:nb}of nbrs(c,false)) if(!bd.has(nb)&&!opp.has(nb)){bd.set(nb,d+1);bq.push(nb);}
+    }
+  }
+  return dests;
+}
+
+// Iterative path-finding (for CPU animation)
+function path1(pid,tok,steps,bench,dest){
+  const up=tok.t==='thief', opp=pid===0?PRV2:PRV1;
+  const src=bench?(pid===0?SP1:SP2):tok.cell;
+  const vis=new Set(), stk=[];
+  if(bench){
+    stk.push({cell:src,left:steps-1,ld:'',path:[src]});
+  } else {
+    stk.push({cell:src,left:steps,ld:'',path:[]});
+  }
+  while(stk.length){
+    const{cell,left,ld,path}=stk.pop();
+    if(left===0){if(cell===dest)return path;continue;}
+    const key=cell+','+left+','+ld;
+    if(vis.has(key)) continue; vis.add(key);
+    for(const{cell:nx,dir}of nbrs(cell,up)){
+      if(rev(ld,dir)||opp.has(nx)) continue;
+      stk.push({cell:nx,left:left-1,ld:dir,path:[...path,nx]});
+    }
+  }
+  return null;
+}
+
+function gtok(pid,tok,roll){const er=eRoll(pid,tok,roll);if(er<=0)return new Set();return reach(pid,tok,er,tok.cell<0);}
+function canMove(tok,pid,roll){if(tok.done)return false;if(tok.lives!==null&&tok.lives<=0)return false;if(tok.cd>0)return false;return gtok(pid,tok,roll).size>0;}
+function movable(pid,roll){return G.pl[pid].bench.filter(t=>!t.done&&canMove(t,pid,roll));}
+function fTok(id){for(const p of G.pl)for(const t of p.bench)if(t.id===id)return t;return null;}
+
+// ═══════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════
+function mkPl(pid){
+  return{id:pid,score:0,royDone:0,coins:0,bench:UNITS.map((u,i)=>({
+    id:'p'+pid+'-'+i, t:u.t, l:u.l, f:u.f,
+    cell:-1, sUp:u.t==='shield', sBr:false, done:false,
+    lives:ROY.has(u.t)||u.t==='soldier'?null:2,
+    cd:0,
+    st:{moves:0,kills:0,coins:0,castles:0,finishes:0,deaths:0}
+  }))};
+}
+
+function newGame(){
+  document.getElementById('mode-modal').classList.add('show');
+}
+function _startGame(ft){
+  if(ft===undefined) ft=Math.random()<0.5?0:1;
+  // Generate forest using slot grid to prevent overlaps
+  // Each blank cell uses a 3x3 grid of 9 slots; pick slots randomly for trees/accents
+  const blankSqs=[];
+  for(let i=0;i<ROWS*COLS;i++){if(CT[i]==='blank')blankSqs.push(i);}
+  const treeSqs=new Map();
+  const ACCENTS=[
+    {e:'🪨',p:0.15},{e:'🍄',p:0.10},{e:'🪵',p:0.10},{e:'🌿',p:0.08},
+    {e:'🐺',p:0.04},{e:'🦌',p:0.04},{e:'🐗',p:0.04},{e:'🐇',p:0.04},{e:'🦉',p:0.04}
+  ];
+  // 3x3 slot centres as % offsets from cell centre (-33, 0, +33 per axis)
+  // Add small jitter within each slot so it doesn't look grid-like
+  function makeSlots(){
+    const slots=[];
+    for(let row=0;row<3;row++) for(let col=0;col<3;col++){
+      slots.push({
+        dx:(col-1)*33 + Math.floor(Math.random()*14)-7,
+        dy:(row-1)*33 + Math.floor(Math.random()*14)-7
+      });
+    }
+    // Fisher-Yates shuffle
+    for(let i=slots.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [slots[i],slots[j]]=[slots[j],slots[i]];
+    }
+    return slots;
+  }
+  blankSqs.forEach(function(idx){
+    const slots=makeSlots(); // 9 shuffled slots
+    let slotIdx=0;
+    const items=[];
+    const r=Math.random();
+    const treeCount=r<0.08?4:r<0.35?5:r<0.75?6:7;
+    for(let t=0;t<treeCount&&slotIdx<slots.length;t++,slotIdx++){
+      items.push({e:'🌲', dx:slots[slotIdx].dx, dy:slots[slotIdx].dy, sz:(function(){var r=Math.random();return r<0.5?Math.floor(Math.random()*3)+10:r<0.8?Math.floor(Math.random()*3)+14:Math.floor(Math.random()*4)+18;}())});
+    }
+    ACCENTS.forEach(function(a){
+      if(slotIdx<slots.length&&Math.random()<a.p){
+        items.push({e:a.e, dx:slots[slotIdx].dx, dy:slots[slotIdx].dy, sz:(function(){var r=Math.random();return r<0.5?Math.floor(Math.random()*3)+9:r<0.8?Math.floor(Math.random()*3)+13:Math.floor(Math.random()*3)+17;}())});
+        slotIdx++;
+      }
+    });
+    treeSqs.set(idx,items);
+  });
+  G={turn:ft, phase:'roll', roll:0, d1:null, d2:null, treeSqs,
+     ift:true, // is first turn (single die)
+     csa:1, csm:false, chain:false, cpuTurnCount:0, p2human:G.p2human||false,
+     sel:null, rch:new Set(), busy:false, anim:false, snm:false,
+     hist:[], hN:1,
+     pl:[mkPl(0),mkPl(1)]};
+  histOpen=false;
+  document.getElementById('hp').classList.remove('open');
+  document.getElementById('chev').classList.remove('open');
+  document.getElementById('wo').classList.remove('show');
+  document.getElementById('csp-popup').classList.remove('open');
+  
+  resetDice(); buildDOM(); render();
+  const msg=ft===0?'Fortune favours P1 — P1 goes first! One die to open.':p2lbl()+' goes first! One die to open.';
+  addH(ft===0?'p1':'cpu',msg); setSt(msg,false);
+  if(ft===1){if(G.p2human){setSt(p2lbl()+"'s Turn - Roll Dice",false);}else{setTimeout(cpuTurn,1200);}}
+}
+
+// ═══════════════════════════════════════════
+// COIN SPEND
+// ═══════════════════════════════════════════
+function updCP(){
+  const ok=G.turn===0&&!G.anim&&G.phase==='roll'&&!G.chain;
+  const btn=document.getElementById('btn-cog');
+  if(btn) btn.disabled=!(ok&&G.pl[0].coins>0)||G.csm;
+}
+function openCS(){
+  if(G.turn!==0||G.phase!=='roll'||G.anim||G.chain) return;
+  G.csm=true; G.csa=1;
+  document.getElementById('btn-roll').disabled=true;
+  document.getElementById('csp-popup').classList.add('open');
+  document.getElementById('csv').textContent=1;
+  document.getElementById('cst').textContent=1;
+  document.getElementById('cm').disabled=true;
+  document.getElementById('cp2').disabled=G.pl[0].coins<=1;
+  setSt('Choose coins — each = 1 step. Royals & Merchant excluded.',false); // clears CPU msg
+}
+function adjCS(d){
+  const max=G.pl[0].coins;
+  G.csa=Math.max(1,Math.min(max,G.csa+d));
+  document.getElementById('csv').textContent=G.csa;
+  document.getElementById('cst').textContent=G.csa;
+  document.getElementById('cm').disabled=G.csa<=1;
+  document.getElementById('cp2').disabled=G.csa>=max;
+}
+function confirmCS(){
+  const amt=G.csa;
+  const mv=G.pl[0].bench.filter(t=>{if(t.done||NCS.has(t.t))return false;return canMove(t,0,amt);});
+  if(!mv.length){setSt('No valid moves for '+amt+' step'+(amt>1?'s':'')+'. Adjust or cancel.',false);return;}
+  G.pl[0].coins-=amt; G.roll=amt; G.d1=null; G.d2=null;
+  showCoins(amt);
+  G.csm=false;
+  document.getElementById('csp-popup').classList.remove('open');
+  
+  G.phase='select'; G.rch=new Set(); G.snm=true; render(); updCP();
+  const msg='P1 spends '+amt+' gold coin'+(amt>1?'s':'')+' — choose a unit!';
+  addH('p1',msg); setSt(msg,false);
+}
+function cancelCS(){
+  G.csm=false; G.roll=0;
+  document.getElementById('csp-popup').classList.remove('open');
+  
+  resetDice(); G.snm=false; render(); updCP();
+  setSt(G.ift?'P1 — roll one die to open!':'P1 — roll the dice!',false);
+}
+
+// ═══════════════════════════════════════════
+// DOM BUILD & RENDER
+// ═══════════════════════════════════════════
+function buildDOM(){
+  const rl=document.getElementById('row-labels'); rl.innerHTML='';
+  for(let r=1;r<=16;r++){const d=document.createElement('div');d.className='row-label';d.textContent='R'+r;rl.appendChild(d);}
+  const gr=document.getElementById('board-grid'); gr.innerHTML='';
+  for(let i=0;i<ROWS*COLS;i++){const d=document.createElement('div');d.id='c'+i;d.className='cell';gr.appendChild(d);}
+}
+
+function render(){
+  rBench(0); rBench(1); rBoard();
+  var lbl=document.getElementById('p2-label');
+  if(lbl) lbl.textContent=G&&G.p2human?'Player 2':'CPU';
+  
+  
+  document.getElementById('co1').textContent=G.pl[0].coins;
+  document.getElementById('co2').textContent=G.pl[1].coins;
+  document.getElementById('pp1').className='pp'+(G.turn===0?' active':'');
+  document.getElementById('pp2').className='pp'+(G.turn===1?' active':'');
+  document.getElementById('btn-roll').style.display='';
+  document.getElementById('btn-roll').disabled=!((G.turn===0||(G.turn===1&&G.p2human))&&G.phase==='roll'&&!G.anim)||G.csm;
+  updCP();
+}
+
+function crSVG(sz){return '<svg class="crack" viewBox="0 0 '+sz+' '+sz+'"><path d="M'+(sz*.38)+' '+(sz*.12)+' L'+(sz*.48)+' '+(sz*.32)+' L'+(sz*.36)+' '+(sz*.44)+' L'+(sz*.52)+' '+(sz*.62)+' L'+(sz*.44)+' '+(sz*.82)+'" fill="none" stroke="#AA3A2A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';}
+function xSVG(){return '<svg class="no-x" viewBox="0 0 34 34"><line x1="7" y1="7" x2="27" y2="27" stroke="#AA3A2A" stroke-width="4" stroke-linecap="round" opacity="0.8"/><line x1="27" y1="7" x2="7" y2="27" stroke="#AA3A2A" stroke-width="4" stroke-linecap="round" opacity="0.8"/></svg>';}
+
+function rBench(pid){
+  const el=document.getElementById('bench'+(pid+1)); el.innerHTML='';
+  const col=pid===0?'p1':'p2';
+  const ics=G.phase==='select'&&G.d1===null&&G.d2===null;
+  G.pl[pid].bench.forEach(tok=>{
+    const exc=ics&&NCS.has(tok.t);
+    const er=eRoll(pid,tok,G.roll);
+    const hm=!tok.done&&!exc&&er>0&&canMove(tok,pid,G.roll);
+    const mv=G.phase==='select'&&G.turn===pid&&(pid===0||(pid===1&&G.p2human))&&!G.anim&&hm;
+    const sx=G.snm&&pid===0&&G.phase==='select'&&!tok.done&&!exc&&!hm;
+    const wrap=document.createElement('div'); wrap.className='tok-wrap'; wrap.style.position='relative';
+    const d=document.createElement('div');
+    const isDead=tok.lives!==null&&tok.lives<=0;
+    let cls='bt';
+    if(tok.done)cls+=' fin'; else if(isDead)cls+=' fin'; else if(tok.cell>=0)cls+=' on-board'; else cls+=' on-bench';
+    if(mv)cls+=' movable'; if(G.sel===tok.id)cls+=' selected';
+    d.className=cls; d.style.borderColor=pid===0?'#4A7AAA':'#AA4A4A';
+    d.innerHTML=isDead?'<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#444" stroke="#222" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">💀</text></svg>':tok.f(col);
+    if(tok.t==='shield'&&tok.sBr&&!isDead) d.insertAdjacentHTML('beforeend',crSVG(30));
+    if(sx) d.insertAdjacentHTML('beforeend',xSVG());
+    if(mv) d.onclick=function(){selTok(tok.id);};
+    const lbl=document.createElement('div');
+    lbl.className='tok-lbl'+(tok.cell>=0&&!tok.done?' dim':'');
+    lbl.textContent=tok.l;
+    wrap.appendChild(d);
+    // Lives badge positioned on tok-wrap (outside overflow:hidden)
+    if(tok.lives!==null&&!isDead){
+      const rom=['','I','II','III'][tok.lives]||'';
+      const badge=document.createElement('span');
+      badge.style.cssText='position:absolute;top:-4px;left:0px;font-size:8px;font-weight:700;color:'+(tok.cell>=0?'rgba(0,0,0,0.35)':'#000')+';font-family:Georgia,serif;line-height:1;pointer-events:none;text-shadow:0 0 3px rgba(255,255,255,1),0 0 2px rgba(255,255,255,1)';
+      badge.textContent=rom;
+      wrap.appendChild(badge);
+    }
+    // Cooldown overlay
+    if(tok.cd>0&&!isDead){
+      d.style.opacity='0.35';
+      const cdEl=document.createElement('span');
+      cdEl.className='cd-overlay';
+      cdEl.textContent=tok.cd;
+      wrap.appendChild(cdEl);
+    }
+    wrap.appendChild(lbl); el.appendChild(wrap);
+  });
+}
+
+function rBoard(){
+  const cT={};
+  G.pl.forEach((p,pid)=>p.bench.forEach(tok=>{
+    if(!tok.done&&tok.cell>=0){if(!cT[tok.cell])cT[tok.cell]=[];cT[tok.cell].push({tok,pid});}
+  }));
+  const cm={blank:'blank',d1:'dest1',d2:'dest2',ca:'castle',co:'coin',rr:'reroll',p1:'priv1',p2:'priv2',sh:'sh'};
+  for(let i=0;i<ROWS*COLS;i++){
+    const div=document.getElementById('c'+i); if(!div) continue;
+    const ct=CT[i], ir=G.rch.has(i);
+    let cls='cell '+(cm[ct]||'sh');
+    if(ir) cls+=' highlighted';
+    div.className=cls.trim();
+    div.onclick=ir&&!G.anim?function(idx){return function(){moveTo(idx);};}(i):null;
+    div.innerHTML='';
+    if(ct==='blank'&&G.treeSqs&&G.treeSqs.has(i)){
+      const trees=G.treeSqs.get(i);
+      trees.forEach(function(tr){
+        const t=document.createElement('span');
+        t.style.cssText='position:absolute;font-size:'+tr.sz+'px;opacity:0.6;pointer-events:none;user-select:none;left:calc(50% + '+tr.dx+'%);top:calc(50% + '+tr.dy+'%);transform:translate(-50%,-50%)';
+        t.textContent=tr.e; div.appendChild(t);
+      });
+    }
+    if(ct!=='blank'){
+      const s=document.createElement('span'); s.className='cell-icon';
+      if(ct==='d1'||ct==='d2')s.textContent='🎪';
+      else if(ct==='ca')s.textContent='🏰';
+      else if(ct==='co')s.textContent='💰';
+      else if(ct==='rr')s.textContent='🎲';
+      div.appendChild(s);
+      if(CC[i]){const n=document.createElement('span');n.className='cell-lbl';n.textContent=CC[i];div.appendChild(n);}
+    }
+    if(i===SP1){const n=document.createElement('span');n.className='cell-lbl';n.style.cssText='color:#4A6AA0;top:2px;bottom:auto';n.textContent='P1 Start';div.appendChild(n);}
+    if(i===SP2){const n=document.createElement('span');n.className='cell-lbl';n.style.cssText='color:#A04A4A;top:2px;bottom:auto';n.textContent='CPU Start';div.appendChild(n);}
+    if(i===DP1){const n=document.createElement('span');n.className='cell-lbl';n.style.cssText='color:#4A6AA0;top:2px;bottom:auto';n.textContent='P1 Finish';div.appendChild(n);}
+    if(i===DP2){const n=document.createElement('span');n.className='cell-lbl';n.style.cssText='color:#A04A4A;top:2px;bottom:auto';n.textContent='CPU Finish';div.appendChild(n);}
+    (cT[i]||[]).forEach(function({tok,pid}){
+      const col=pid===0?'p1':'p2';
+      const p=document.createElement('div');
+      let pcls='piece p'+(pid+1);
+      if(G.sel===tok.id) pcls+=' sel-board';
+
+      else if(tok.t==='shield'&&tok.sBr) pcls+=' sh-brk';
+      else if(ROY.has(tok.t)&&tok.cell>=0&&isRoyProt(pid,tok.cell)) pcls+=' roy-prot';
+      p.className=pcls; p.style.position='relative';
+      p.innerHTML=tok.f(col);
+      if(tok.t==='shield'&&tok.sBr) p.insertAdjacentHTML('beforeend',crSVG(36));
+      if(!G.anim&&G.phase==='select'&&G.turn===pid&&(pid===0||(pid===1&&G.p2human))){
+        const ic2=G.d1===null&&G.d2===null;
+        if(!(ic2&&NCS.has(tok.t))&&canMove(tok,0,G.roll)){
+          p.classList.add('clickable');
+          p.onclick=function(e){e.stopPropagation();selTok(tok.id);};
+        }
+      }
+      div.appendChild(p);
+    });
+  }
+}
+
+// ═══════════════════════════════════════════
+// DICE
+// ═══════════════════════════════════════════
+function resetDice(){
+  ['d1','d2'].forEach(function(id){const el=document.getElementById(id);el.className='die pend';el.querySelector('.dn').textContent='—';});
+  const tb=document.getElementById('dtb'); tb.className='dt pend';
+  const dn=document.getElementById('dtn'); dn.textContent='—'; dn.className='dtn';
+}
+function showDice(a,b,total,cls){
+  const e1=document.getElementById('d1'),e2=document.getElementById('d2');
+  e1.className='die roll'; e2.className=b===null?'die inact':'die roll';
+  setTimeout(function(){e1.className='die';e2.className=b===null?'die inact':'die';},320);
+  document.getElementById('d1n').textContent=a;
+  document.getElementById('d2n').textContent=b===null?'—':b;
+  const tb=document.getElementById('dtb'); tb.className='dt';
+  const dn=document.getElementById('dtn'); dn.className='dtn'+(cls?' '+cls:''); dn.textContent=total;
+}
+function showCoins(amt){
+  document.getElementById('d1').className='die'; document.getElementById('d2').className='die';
+  document.getElementById('d1n').textContent='✦'; document.getElementById('d2n').textContent='✦';
+  document.getElementById('dtb').className='dt';
+  const dn=document.getElementById('dtn'); dn.className='dtn cs'; dn.textContent=amt;
+}
+function setSt(msg,chain){
+  const el=document.getElementById('st');
+  el.className=chain?'chain':'';
+  // Render last 3 history entries, most recent at bottom
+  const recent=G.hist.slice(-3);
+  el.innerHTML='';
+  recent.forEach(function(e){
+    const row=document.createElement('div');
+    row.className='st-row '+(e.who==='p1'?'p1':'cpu');
+    const who=document.createElement('span');
+    who.className='st-who';
+    who.textContent=e.who==='p1'?'P1:':(G&&G.p2human?'P2:':'CPU:');
+    const msg2=document.createElement('span');
+    msg2.className='st-msg';
+    msg2.textContent=e.msg;
+    row.appendChild(who);row.appendChild(msg2);
+    el.appendChild(row);
+  });
+}
+
+// ═══════════════════════════════════════════
+// HUMAN TURN
+// ═══════════════════════════════════════════
+var _pendingFt=0;
+function startGame(p2human){
+  document.getElementById('mode-modal').classList.remove('show');
+  G.p2human=p2human;
+  // Toss coin before starting
+  _pendingFt=Math.random()<0.5?0:1;
+  var heads=_pendingFt===0;
+  var winner=_pendingFt===0?'P1':(G.p2human?'P2':'CPU');
+  var modal=document.getElementById('coin-modal');
+  var emoji=document.getElementById('coin-emoji');
+  var result=document.getElementById('coin-result');
+  var goBtn=document.getElementById('coin-go');
+  result.textContent='';
+  goBtn.style.display='none';
+  emoji.textContent='🪙';
+  emoji.classList.remove('flip');
+  modal.classList.add('show');
+  // Trigger flip animation - keep as coin during spin
+  setTimeout(function(){
+    emoji.textContent='🪙';
+    emoji.classList.add('flip');
+  },50);
+  // Reveal result emoji after animation completes
+  setTimeout(function(){
+    emoji.classList.remove('flip');
+    emoji.textContent=heads?'🤴':'👸';
+    result.textContent=(heads?'Heads! 🤴':'Tails! 👸')+' '+winner+' goes first!';
+    goBtn.style.display='inline-block';
+  },1500);
+}
+function coinDismiss(){
+  document.getElementById('coin-modal').classList.remove('show');
+  _startGame(_pendingFt);
+}
+function toggleP2(isHuman){
+  G.p2human=isHuman;
+  render();
+}
+function p2lbl(){return G&&G.p2human?'P2':'CPU';}
+function p1lbl(){return 'P1';}
+function doRoll(){
+  if(G.ift){const d=rdie();return{d1:d,d2:null,total:d};}
+  const a=rdie(),b=rdie();return{d1:a,d2:b,total:a+b};
+}
+
+function roll(){
+  if(G.phase!=='roll'||G.anim||G.csm) return;
+  if(G.turn===1&&!G.p2human) return;
+  const{d1,d2,total}=doRoll();
+  G.d1=d1; G.d2=d2; G.roll=total;
+  setSt('',false); SFX.roll(); showDice(d1,d2,total,G.chain?'chn':null);
+  document.getElementById('btn-roll').disabled=true; updCP();
+  const od=d2===null?' (opening — one die)':'';
+  const who=G.turn===0?'p1':'p2';
+  if(total===0){
+    const m=G.chain?'Chain ended — rolled 0.':'Rolled 0'+od+' — no move. Turn passes.';
+    addH(who,m); setSt(m,false); G.chain=false; G.snm=false; G.hN++;
+    setTimeout(endTurn,1200); return;
+  }
+  if(!movable(G.turn,total).length){
+    const m=G.chain?'Chain ended — no valid moves.':'Rolled '+total+od+' — no valid moves. Turn passes.';
+    addH(who,m); setSt(m,false); G.chain=false; G.snm=false; G.hN++;
+    setTimeout(endTurn,1200); return;
+  }
+  G.phase='select'; G.rch=new Set(); G.snm=true;
+  const m=G.chain?'Chain! Rolled '+total+' — choose a unit!':'Rolled '+total+od+' — choose a unit!';
+  addH(who,m); setSt(m,G.chain); render();
+}
+
+function selTok(id){
+  if(G.phase!=='select'||G.anim) return;
+  if(G.turn===1&&!G.p2human) return;
+  const pid=G.turn;
+  const tok=fTok(id); if(!tok||tok.id.indexOf('p'+pid+'-')!==0) return;
+  const er=eRoll(pid,tok,G.roll);
+  if(er<=0){setSt('This unit cannot move on this roll.',G.chain);return;}
+  if(!canMove(tok,pid,G.roll)){setSt('No valid moves for that unit.',G.chain);return;}
+  G.sel=id; showDice(G.d1,G.d2,er,G.chain?'chn':er!==G.roll?'bon':null);
+  G.rch=gtok(pid,tok,G.roll); render();
+  setSt(tok.l+' — '+G.rch.size+' destination'+(G.rch.size!==1?'s':'')+' available.',G.chain);
+}
+
+function moveTo(dest){
+  const tok=fTok(G.sel); if(!tok) return;
+  const pid=G.turn;
+  G.sel=null; G.rch=new Set(); G.snm=false;
+  const er=eRoll(pid,tok,G.roll);
+  const isB=tok.cell<0;
+  const p=path1(pid,tok,er,isB,dest);
+  if(p&&p.length>1){
+    const origCell=tok.cell;
+    animPath(tok,p.slice(0,p.length-1),function(){tok.cell=origCell;applyMove(pid,tok,dest);},110);
+  } else {
+    applyMove(pid,tok,dest);
+  }
+}
+
+// ═══════════════════════════════════════════
+// COMBAT & MOVE
+// ═══════════════════════════════════════════
+function bench(pid,tok,captured){
+  tok.cell=-1;
+  if(tok.t==='shield'){tok.sUp=true;tok.sBr=false;}
+  if(captured){
+    tok.st.deaths++;
+    if(tok.lives!==null&&tok.lives>0) tok.lives--;
+    // Only apply cooldown if not permanently eliminated
+    if(tok.lives===null||tok.lives>0) tok.cd=4;
+  }
+}
+function steal(pid,opp,ot){
+  if(ROY.has(ot.t)){const s=Math.min(1,G.pl[opp].coins);G.pl[opp].coins-=s;G.pl[pid].coins+=s;return s;}
+  return 0;
+}
+function lbKills(pid,dest){
+  const opp=1-pid; let k=0,cs=0;
+  for(const cell of lbtg(dest)){
+    if(CAS.has(cell)) continue;
+    G.pl[opp].bench.filter(t=>!t.done&&t.cell===cell).forEach(function(ot){
+      if(ot.t==='shield'&&ot.sUp) return;
+      if(ROY.has(ot.t)&&isRoyProt(opp,cell)) return;
+      cs+=steal(pid,opp,ot); bench(opp,ot,true); k++;
+    });
+  }
+  return{k,cs};
+}
+
+function applyMove(pid,tok,dest){
+  const opp=1-pid, who=pid===0?'p1':'cpu';
+  const fin=(pid===0&&dest===DP1)||(pid===1&&dest===DP2);
+  let atk=false, msg='';
+
+  if(!fin){
+    if(tok.t==='archer'){
+      const{k,cs}=lbKills(pid,dest);
+      if(k>0){tok.st.kills+=k;SFX.capture();msg='Archer fells '+k+' unit'+(k>1?'s':'')+' at '+CC[dest]+'!'+(cs>0?' '+cs+' gold seized!':'');atk=true;}
+    } else if(tok.t!=='merchant'){
+      const en=G.pl[opp].bench.filter(t=>!t.done&&t.cell===dest);
+      if(en.length>0){
+        const re=en.find(e=>ROY.has(e.t)), ot=re||en[0];
+        if(ROY.has(ot.t)&&isRoyProt(opp,dest)){
+          const m='The Royal is guarded — cannot capture!';
+          addH(who,m); setSt(m,G.chain);
+          G.sel=null; G.rch=new Set(); G.chain=false; G.snm=false; G.phase='roll'; render();
+          if(pid===0){document.getElementById('btn-roll').disabled=false;updCP();}
+          else setTimeout(endTurn,800);
+          return;
+        }
+        if(ot.t==='shield'&&ot.sUp){
+          ot.sUp=false; ot.sBr=true;
+          SFX.shieldCrack();
+          const m=tok.l+' struck the Shield at '+CC[dest]+' — it cracks but holds!';
+          addH(who,m); G.hN++; G.chain=false; G.snm=false; G.sel=null; G.rch=new Set(); G.phase='roll'; render();
+          if(pid===0){document.getElementById('btn-roll').disabled=false;updCP();}
+          setTimeout(endTurn,1400); return;
+        }
+        const s=steal(pid,opp,ot);
+        if(ROY.has(ot.t))SFX.royalCapture();else SFX.capture();
+        let tb=0;
+        if(tok.t==='thief'&&G.pl[opp].coins>0){tb=Math.min(1,G.pl[opp].coins);G.pl[opp].coins-=tb;G.pl[pid].coins+=tb;}
+        en.forEach(function(e){bench(opp,e,true);});
+        tok.st.kills++;
+        const livesLeft=ot.lives!==null?ot.lives:null;
+        const livesMsg=livesLeft!==null?(livesLeft>0?' ('+['','I','II','III'][livesLeft]+' life'+(livesLeft===1?' remains':' remain')+')':' (eliminated!)'):'';
+        msg=tok.l+' captures '+ot.l+' at '+CC[dest]+'!'+livesMsg+(s>0?' '+s+' royal gold seized!':'')+(tb>0?' +1 pilfered!':'');
+        atk=true;
+      }
+    }
+  }
+
+  tok.cell=dest;
+  tok.st.moves++;
+  if(tok.t==='merchant'){
+    if(CAS.has(dest)){G.pl[pid].coins++;tok.st.coins++;SFX.coin();msg='Merchant at castle ('+CC[dest]+') — +1 gold! Treasury: '+G.pl[pid].coins;}
+    else if(COI.has(dest)){G.pl[pid].coins+=2;tok.st.coins+=2;SFX.coin();msg='Merchant at gold coin ('+CC[dest]+') — +2 gold! Treasury: '+G.pl[pid].coins;}
+    else if(!msg) msg='Merchant moves to '+CC[dest]+'.';
+  } else if(COI.has(dest)){G.pl[pid].coins++;tok.st.coins++;SFX.coin();if(!msg)msg='Gold coin at '+CC[dest]+'! Treasury: '+G.pl[pid].coins;}
+
+  if(fin){
+    SFX.finish();
+    if(ROY.has(tok.t)){
+      // ROY permanently finishes — counts toward win
+      tok.done=true; tok.cell=-1; tok.st.finishes++;
+      G.pl[pid].royDone=(G.pl[pid].royDone||0)+1;
+      G.hN++; render();
+      if(G.pl[pid].royDone>=2){endGame(pid);return;}
+      const m=tok.l+' reaches safety! Royals safe: '+G.pl[pid].royDone+'/2';
+      addH(who,m); setSt(m,false);
+    } else {
+      // NROY returns to bench — gains a life (max 3), shield resets
+      tok.cell=-1; tok.done=false; tok.st.finishes++; tok.cd=4;
+      if(tok.t==='shield'){tok.sUp=true;tok.sBr=false;}
+      if(tok.lives!==null&&tok.lives<3) tok.lives++;
+      G.hN++; render();
+      const m=tok.l+' returns to camp!'+(tok.lives!==null?' (Lives: '+['','I','II','III'][tok.lives]+')':'');
+      addH(who,m); setSt(m,false);
+    }
+    G.chain=false; G.snm=false; G.sel=null; G.rch=new Set();
+    setTimeout(endTurn,pid===1?1200:500); return;
+  }
+  render();
+
+  // Chain triggers on sword capture, or continues if chain already active and any kill
+  const tc=atk&&(tok.t==='sword'||G.chain);
+  if(tc){
+    G.chain=true;
+    const m=msg+' ⚔ Chain! Roll again!';
+    addH(who,m); G.hN++; setSt(m,true); G.sel=null; G.rch=new Set(); G.phase='roll'; render();
+    if(pid===0){document.getElementById('btn-roll').disabled=false;updCP();}
+    else setTimeout(cpuTurn,1000);
+    return;
+  }
+  if(RRL.has(dest)){
+    SFX.reroll();
+    const m=tok.l+' lands on roll-again! '+(pid===0?'P1 — roll again!':p2lbl()+' — roll again!');
+    addH(who,m); G.hN++; setSt(m,false); G.sel=null; G.rch=new Set(); G.phase='roll'; render();
+    if(pid===0){document.getElementById('btn-roll').disabled=false;updCP();}
+    else setTimeout(cpuTurn,1000);
+    return;
+  }
+  if(!msg){if(CAS.has(dest)){tok.st.castles++;SFX.castle();msg=tok.l+' shelters in castle at '+CC[dest]+'.';}else{msg=tok.l+' moves to '+CC[dest]+'.';}}else if(CAS.has(dest)&&!atk){tok.st.castles++;SFX.castle();}
+  addH(who,msg); G.hN++; setSt(msg,false);
+  G.chain=false; G.snm=false; G.sel=null; G.rch=new Set();
+  setTimeout(endTurn,pid===1?1000:300);
+}
+
+// ═══════════════════════════════════════════
+// CPU AI (CPUMP)
+// ═══════════════════════════════════════════
+// ── CPUMP2 FUNCTIONS ──
+// ── CPUMP2 ──
+// VUL = any NROY unit with a finite lives counter (not soldier, not royals)
+function isVUL(tok){return NROY.has(tok.t)&&tok.lives!==null;}
+
+// Can an enemy unit reach this cell next turn?
+function isExposed(pid,cell){
+  var opp=1-pid;
+  var maxR=5; // max single-die roll is 3, two dice max 6, knight+2=8 but 5 covers most cases
+  return G.pl[opp].bench.some(function(et){
+    if(et.done||et.cell<0)return false;
+    var er=eRoll(opp,et,maxR);
+    var r=reach(opp,et,er,false);
+    return r.has(cell);
+  });
+}
+
+// How many friendly kingsguards are adjacent to a cell?
+function guardCount(pid,cell){
+  return oadj(cell).filter(function(c){
+    var f=G.pl[pid].bench.find(function(t){return !t.done&&t.cell===c;});
+    return f&&KG.has(f.t);
+  }).length;
+}
+
+function ownRoyThreatened(pid){
+  var opp=1-pid;
+  var ownRoys=G.pl[pid].bench.filter(function(t){return !t.done&&ROY.has(t.t)&&t.cell>=0;});
+  if(!ownRoys.length)return false;
+  return ownRoys.some(function(roy){
+    return G.pl[opp].bench.some(function(et){
+      if(et.done||et.cell<0)return false;
+      var r=reach(opp,et,eRoll(opp,et,5),false);
+      return r.has(roy.cell);
+    });
+  });
+}
+
+function isILife(pid,tok,dest){
+  var opp=1-pid;
+  if(tok.t==='archer'){return lbtg(dest).some(function(c){if(CAS.has(c))return false;var ot=G.pl[opp].bench.find(function(t){return !t.done&&t.cell===c;});if(!ot||ot.lives===null)return false;if(ROY.has(ot.t)&&isRoyProt(opp,c))return false;return ot.lives===1&&!(ot.t==='shield'&&ot.sUp);});}
+  if(CAS.has(dest)&&tok.t!=='siege')return false;
+  var ot=G.pl[opp].bench.find(function(t){return !t.done&&t.cell===dest;});
+  if(!ot||ot.lives===null)return false;
+  if(ROY.has(ot.t)&&isRoyProt(opp,dest))return false;
+  return ot.lives===1;
+}
+
+// Is C4 castle (ix(3,4)) controlled by enemy?
+function enemyHoldsC4(pid){
+  var opp=1-pid;
+  var c4=ix(3,4);
+  return G.pl[opp].bench.some(function(t){return !t.done&&t.cell===c4;});
+}
+
+// Is siege in ambush position (bench or private lane, pid=1 means cols 4-5 rows 1-4)
+function siegeAmbushDest(pid,dest){
+  // For pid=1 (CPU): park in E2,E3,E4 (ix(5,2),ix(5,3),ix(5,4)) waiting for C4
+  // For pid=0 (player): A2,A3,A4
+  if(pid===1){
+    return dest===ix(5,2)||dest===ix(5,3)||dest===ix(5,4);
+  }
+  return dest===ix(1,2)||dest===ix(1,3)||dest===ix(1,4);
+}
+
+function scD_cpump2(pid,tok,dest){
+  var isN=NROY.has(tok.t),isR=ROY.has(tok.t);
+  var finDest=(pid===0&&dest===DP1)||(pid===1&&dest===DP2);
+  var distToFin=dtf(pid,dest);
+  var coins=G.pl[pid].coins;
+  var opp=1-pid;
+  var cpuTurnCount=G.cpuTurnCount||0;
+
+  // ── HELPER: is enemy siege on the board? ──
+  var enemySiegeOnBoard=G.pl[opp].bench.some(function(t){return !t.done&&t.t==='siege'&&t.cell>=0;});
+
+  // ── HELPER: is our siege threatened (enemy can reach it in one move)? ──
+  function ourSiegeThreatened(){
+    var siege=G.pl[pid].bench.find(function(t){return !t.done&&t.t==='siege'&&t.cell>=0;});
+    if(!siege) return false;
+    return isExposed(pid,siege.cell);
+  }
+
+  // ── HELPER: clear path for ROY (no enemies at higher row than ROY) ──
+  function royHasClearPath(){
+    var roys=G.pl[pid].bench.filter(function(t){return !t.done&&ROY.has(t.t)&&t.cell>=0;});
+    if(!roys.length) return false;
+    var maxRoyRow=Math.max.apply(null,roys.map(function(r){return Math.floor(r.cell/COLS);}));
+    // For pid=1 (CPU at top, finish at bottom), higher row index = closer to finish
+    return !G.pl[opp].bench.some(function(t){
+      return !t.done&&t.cell>=0&&Math.floor(t.cell/COLS)>maxRoyRow;
+    });
+  }
+
+  // ── TIER 1: WIN & IMMEDIATE THREATS ──
+
+  // P1: ROY finish — win condition
+  if(isR&&finDest) return{p:1,d:0};
+
+  // P2: Capture unprotected enemy ROY
+  if(isRCap(pid,tok,dest)) return{p:2,d:0};
+
+  // P2.5: Kill enemy Siege (2nd highest priority after ROY capture)
+  if(isN&&isCap(pid,tok,dest)){
+    var target=G.pl[opp].bench.find(function(t){return !t.done&&t.cell===dest;});
+    var lbTargets=tok.t==='archer'?lbtg(dest):[];
+    var targetIsSiege=(target&&target.t==='siege')||lbTargets.some(function(c){
+      var t=G.pl[opp].bench.find(function(x){return !x.done&&x.cell===c;});
+      return t&&t.t==='siege';
+    });
+    if(targetIsSiege) return{p:2,d:0};
+  }
+
+  // P3: Eliminate I-life VUL enemy unit (permanent removal)
+  if(isN&&isILife(pid,tok,dest)) return{p:3,d:0};
+
+  // P3.5: Retreat threatened siege ASAP
+  if(tok.t==='siege'&&tok.cell>=0&&ourSiegeThreatened()&&dest!==tok.cell){
+    // Score as high priority retreat — prefer moving farther away
+    return{p:3,d:-distToFin}; // negative dist = farther = better
+  }
+
+  // P4: VUL unit at I life near finish — regain a life (within 7 sq)
+  if(isVUL(tok)&&tok.lives===1&&finDest&&distToFin<=7) return{p:4,d:distToFin};
+
+  // P5: Knight finish — always opportunistic
+  if(tok.t==='knight'&&finDest){
+    var roysDone=G.pl[pid].royDone||0;
+    return{p:roysDone===0?5:13,d:0};
+  }
+
+  // ── TIER 2: PROTECT & DEPLOY ──
+
+  // P6: Emergency kingsguard to protect threatened ROY
+  if(isN&&KG.has(tok.t)){
+    var ar=oadj(dest).some(function(c){var f=G.pl[pid].bench.find(function(t){return !t.done&&t.cell===c;});return f&&ROY.has(f.t);});
+    if(ar&&ownRoyThreatened(pid)) return{p:6,d:distToFin};
+  }
+
+  // P6b: Emergency soldier deploy when ROY exposed
+  if(tok.t==='soldier'&&tok.cell<0){
+    var ownRoys=G.pl[pid].bench.filter(function(t){return !t.done&&ROY.has(t.t)&&t.cell>=0;});
+    var exposed=ownRoys.some(function(r){return guardCount(pid,r.cell)<2;});
+    if(exposed) return{p:6,d:distToFin};
+  }
+
+  // P7: Castle-locked NROY must capture to leave
+  if(isN&&tok.t!=='merchant'&&tok.cell>=0&&CAS.has(tok.cell))
+    if(!isCap(pid,tok,dest)) return{p:99,d:0};
+
+  // ── TIER 3: COMBAT ──
+
+  // P8: Standard capture
+  if(isCap(pid,tok,dest)) return{p:8,d:0};
+
+  // ── TIER 4: POSITIONING ──
+
+  // P9: Castle — kingsguards aggressively seek castles
+  if(CAS.has(dest)){
+    if(tok.t==='siege'){
+      var enAtCastle=G.pl[opp].bench.some(function(t){return !t.done&&t.cell===dest;});
+      if(enAtCastle) return{p:8,d:0};
+    }
+    if(KG.has(tok.t)) return{p:9,d:0};
+    var nr=oadj(dest).some(function(c){var f=G.pl[pid].bench.find(function(t){return !t.done&&t.cell===c;});return f&&ROY.has(f.t);});
+    if(nr) return{p:9,d:0};
+    return{p:15,d:0};
+  }
+
+  // P9.5: Merchant aggressively seeks coins and castles (high priority)
+  if(tok.t==='merchant'){
+    if(COI.has(dest)) return{p:9,d:0};  // coins = near-castle priority
+    if(CAS.has(dest)) return{p:9,d:distToFin};
+    // Deploy merchant early if on bench
+    if(tok.cell<0) return{p:10,d:distToFin};
+  }
+
+  // P10: Siege ambush
+  if(tok.t==='siege'&&enemyHoldsC4(pid)&&siegeAmbushDest(pid,dest)){
+    return{p:10,d:0};
+  }
+
+  // P10.5: Coin squares (higher priority than before — valuable resource)
+  if(isN&&tok.t!=='merchant'&&COI.has(dest)) return{p:10,d:0};
+
+  // P11: ROY advancement — with restrictions
+  if(isR){
+    var coinless=coins===0;
+    var adjGuard=oadj(dest).some(function(c){var f=G.pl[pid].bench.find(function(t){return !t.done&&t.cell===c;});return f&&KG.has(f.t);});
+
+    // Clear path exception: ROY on board, no enemies ahead — heavily prioritise
+    if(tok.cell>=0&&royHasClearPath()) return{p:2,d:distToFin};
+
+    // ROY deployment restriction: first 12 CPU turns
+    var isDeployMove=(tok.cell<0); // deploying from bench
+    if(isDeployMove&&cpuTurnCount<12){
+      // Only allow if roll is 4 (extra turn) and no better move available — handled by low priority
+      var roll=G.roll;
+      if(roll===4) return{p:15,d:distToFin}; // allowed but low priority
+      return{p:18,d:distToFin}; // very low — only if nothing else
+    }
+
+    // After 12 turns: still somewhat cautious
+    if(coinless) return{p:12,d:distToFin};
+    if(adjGuard) return{p:12,d:distToFin};
+    if(abcn(dest,3,pid)) return{p:13,d:distToFin};
+    return{p:17,d:distToFin}; // unguarded, deprioritised
+  }
+
+  // P12: VUL at II life near finish (within 4 sq)
+  if(isVUL(tok)&&tok.lives===2&&finDest&&distToFin<=4) return{p:12,d:distToFin};
+
+  // P13: Soldier deploy (general)
+  if(tok.t==='soldier'&&tok.cell<0) return{p:13,d:distToFin};
+
+  // P14: Kingsguard adjacent to ROY
+  if(isN&&KG.has(tok.t)){
+    var ar2=oadj(dest).some(function(c){var f=G.pl[pid].bench.find(function(t){return !t.done&&t.cell===c;});return f&&ROY.has(f.t);});
+    if(ar2) return{p:14,d:distToFin};
+  }
+
+  // P15: Reroll square
+  if(RRL.has(dest)) return{p:15,d:0};
+
+  // P16: VUL finish (general)
+  if(isVUL(tok)&&finDest) return{p:16,d:0};
+
+  // P17: Enter bench unit — prefer higher lives (#4 improvement)
+  if(tok.cell<0){
+    var lives=tok.lives!==null?tok.lives:99; // soldier (null) = always preferred
+    var lifeScore=lives>=3?0:lives===2?0.5:1.5; // 3-life=best, 1-life=penalised
+    return{p:17,d:distToFin+lifeScore};
+  }
+
+  // P18: Advance NROY — penalise exposed squares for VUL units
+  if(isN){
+    var baseDist=tok.cell>=0?dtf(pid,tok.cell):dtf(pid,pid===0?SP1:SP2);
+    var exposurePenalty=0;
+    if(isVUL(tok)&&isExposed(pid,dest)){
+      exposurePenalty=tok.lives===1?8:3;
+    }
+    return{p:18,d:-baseDist+exposurePenalty};
+  }
+
+  return{p:19,d:distToFin};
+}
+
+
+function cpump2CS(pid){
+  var opp=1-pid;if(G.pl[pid].coins<1)return null;
+  function cheap(tf,df){
+    var best=null;
+    G.pl[pid].bench.forEach(function(tok){
+      if(tok.done||!tf(tok))return;var ib=tok.cell<0;
+      for(var c=1;c<=G.pl[pid].coins;c++){
+        var er=eRoll(pid,tok,c);
+        var r=er>0?reach(pid,tok,er,ib):new Set();
+        r.forEach(function(d){if(df(tok,d)&&(!best||c<best.coins))best={tok:tok,dest:d,coins:c};});
+        if(best&&c>=best.coins)break;
+      }
+    });return best;
+  }
+  // Spend coins to capture enemy ROY
+  var rc=cheap(
+    function(tok){return NROY.has(tok.t)&&tok.t!=='archer'&&tok.t!=='merchant';},
+    function(tok,d){var ot=G.pl[opp].bench.find(function(t){return !t.done&&t.cell===d;});if(!ot||!ROY.has(ot.t))return false;if(isRoyProt(opp,d))return false;if(CAS.has(d)&&tok.t!=='siege')return false;return true;}
+  );
+  if(rc&&rc.coins<=3)return rc;
+  // Spend coins to eliminate I-life VUL enemy
+  var ec=cheap(
+    function(tok){return NROY.has(tok.t)&&tok.t!=='archer'&&tok.t!=='merchant';},
+    function(tok,d){if(CAS.has(d)&&tok.t!=='siege')return false;var ot=G.pl[opp].bench.find(function(t){return !t.done&&t.cell===d;});if(!ot||ot.lives===null)return false;if(ROY.has(ot.t)&&isRoyProt(opp,d))return false;return ot.lives===1;}
+  );
+  if(ec&&ec.coins<=3)return ec;
+  // Spend coins for any capture (conservative)
+  var cc=cheap(
+    function(tok){return NROY.has(tok.t)&&tok.t!=='archer'&&tok.t!=='merchant';},
+    function(tok,d){if(CAS.has(d)&&tok.t!=='siege')return false;var ot=G.pl[opp].bench.find(function(t){return !t.done&&t.cell===d;});if(!ot)return false;if(ROY.has(ot.t)&&isRoyProt(opp,d))return false;if(ot.t==='shield'&&ot.sUp)return false;if(ot.t==='soldier')return false;return true;}
+  );
+  if(cc&&cc.coins<=2)return cc;
+  return null;
+}
+
+function cpuCS(){
+  const pid=1,opp=0; if(G.pl[pid].coins<1) return null;
+  function cheap(tf,df){
+    let best=null;
+    G.pl[pid].bench.forEach(function(tok){
+      if(tok.done||!tf(tok)) return;
+      const ib=tok.cell<0;
+      for(let c=1;c<=G.pl[pid].coins;c++){
+        const r=reach(pid,tok,c,ib);
+        for(const d of r) if(df(tok,d)){if(!best||c<best.coins)best={tok,dest:d,coins:c};break;}
+        if(best&&c>=best.coins) break;
+      }
+    });
+    return best;
+  }
+  const rc=cheap(
+    function(tok){return NROY.has(tok.t)&&tok.t!=='archer'&&tok.t!=='merchant';},
+    function(tok,d){const ot=G.pl[opp].bench.find(t=>!t.done&&t.cell===d);if(!ot||!ROY.has(ot.t))return false;if(isRoyProt(opp,d))return false;if(CAS.has(d)&&tok.t!=='siege')return false;return true;}
+  );
+  if(rc) return Object.assign({},rc,{reason:'royal'});
+  const cc=cheap(
+    function(tok){return NROY.has(tok.t)&&tok.t!=='archer'&&tok.t!=='merchant';},
+    function(tok,d){if(CAS.has(d)&&tok.t!=='siege')return false;const ot=G.pl[opp].bench.find(t=>!t.done&&t.cell===d);if(!ot)return false;if(ROY.has(ot.t)&&isRoyProt(opp,d))return false;if(ot.t==='shield'&&ot.sUp)return false;return true;}
+  );
+  if(cc&&cc.coins<=2) return Object.assign({},cc,{reason:'cheap'});
+  return null;
+}
+
+function isCap(pid,tok,dest){
+  const opp=1-pid; if(ROY.has(tok.t)||tok.t==='merchant') return false;
+  if(tok.t==='archer') return lbtg(dest).some(function(c){if(CAS.has(c))return false;const ot=G.pl[opp].bench.find(t=>!t.done&&t.cell===c);if(!ot)return false;if(ROY.has(ot.t)&&isRoyProt(opp,c))return false;return!(ot.t==='shield'&&ot.sUp);});
+  if(CAS.has(dest)&&tok.t!=='siege') return false;
+  const ot=G.pl[opp].bench.find(t=>!t.done&&t.cell===dest); if(!ot) return false;
+  if(ROY.has(ot.t)&&isRoyProt(opp,dest)) return false;
+  return true;
+}
+function isRCap(pid,tok,dest){
+  const opp=1-pid; if(ROY.has(tok.t)||tok.t==='merchant') return false;
+  if(tok.t==='archer') return lbtg(dest).some(function(c){if(CAS.has(c))return false;const ot=G.pl[opp].bench.find(t=>!t.done&&t.cell===c);return ot&&ROY.has(ot.t)&&!isRoyProt(opp,c)&&!(ot.t==='shield'&&ot.sUp);});
+  if(CAS.has(dest)&&tok.t!=='siege') return false;
+  const ot=G.pl[opp].bench.find(t=>!t.done&&t.cell===dest); return!!ot&&ROY.has(ot.t)&&!isRoyProt(opp,dest);
+}
+function scD(pid,tok,dest){
+  const isN=NROY.has(tok.t),isR=ROY.has(tok.t);
+  if(isN&&tok.t!=='merchant'&&tok.cell>=0&&CAS.has(tok.cell))if(!isCap(pid,tok,dest))return{p:99,d:0};
+  if(isRCap(pid,tok,dest))return{p:1,d:0};
+  if(isR&&abcn(dest,3,pid))return{p:3,d:dtf(pid,dest)};
+  if(isCap(pid,tok,dest))return{p:4,d:0};
+  if(RRL.has(dest))return{p:5,d:0};
+  if(CAS.has(dest))return{p:6,d:0};
+  if(isR){const ag=oadj(dest).some(function(c){const f=G.pl[pid].bench.find(t=>!t.done&&t.cell===c);return f&&KG.has(f.t);});if(ag)return{p:7,d:dtf(pid,dest)};}
+  if(isN&&KG.has(tok.t)){const ar=oadj(dest).some(function(c){const f=G.pl[pid].bench.find(t=>!t.done&&t.cell===c);return f&&ROY.has(f.t);});if(ar)return{p:8,d:dtf(pid,dest)};}
+  if(isR&&abcn(dest,2,pid))return{p:9,d:dtf(pid,dest)};
+  if(tok.t==='merchant'){if(COI.has(dest))return{p:10,d:0};if(CAS.has(dest))return{p:11,d:dtf(pid,dest)};}
+  if(isN&&tok.t!=='merchant'&&COI.has(dest))return{p:10,d:0};
+  if(tok.cell<0)return{p:11,d:dtf(pid,dest)};
+  if((pid===1&&dest===DP2)||(pid===0&&dest===DP1))return{p:12,d:0};
+  if(isN){const td=tok.cell>=0?dtf(pid,tok.cell):dtf(pid,pid===1?SP2:SP1);return{p:13,d:-td};}
+  return{p:14,d:dtf(pid,dest)};
+}
+function cpuBest(r){
+  const mv=movable(1,r); let best=[],bp=99,bd=Infinity;
+  mv.forEach(function(tok){gtok(1,tok,r).forEach(function(d){const{p,d:di}=scD_cpump2(1,tok,d);if(p>=99)return;if(p<bp||(p===bp&&di<bd)){bp=p;bd=di;best=[];}if(p===bp&&di===bd)best.push({tok,d});});});
+  if(!best.length){let fp=99,fd=Infinity;mv.forEach(function(tok){gtok(1,tok,r).forEach(function(d){const{p,d:di}=scD_cpump2(1,tok,d);if(p<fp||(p===fp&&di<fd)){fp=p;fd=di;best=[];}if(p===fp&&di===fd)best.push({tok,d});});});}
+  return best.length?rnd(best):null;
+}
+
+function cpuTurn(){
+  if(G.turn!==1||G.busy||G.anim) return;
+  if(G.p2human){setSt(p2lbl()+"'s Turn - Roll Dice",false);render();return;}
+  G.busy=true;
+  if(!G.chain){
+    const cs=cpump2CS(1);
+    if(cs){
+      const{tok,dest,coins,reason}=cs; G.pl[1].coins-=coins;
+      showCoins(coins);
+      const m=p2lbl()+' spends '+coins+' gold to '+(reason==='royal'?'seize the Royal':'a swift capture')+' — heading to '+CC[dest]+'!';
+      addH('cpu',m); setSt(m,false);
+      flashGold(function(){
+        const ib=tok.cell<0, oc=tok.cell;
+        const p=path1(1,tok,coins,ib,dest); tok.cell=oc;
+        if(p&&p.length>1) animPath(tok,p.slice(0,p.length-1),function(){tok.cell=oc;G.busy=false;applyMove(1,tok,dest);});
+        else{G.busy=false;applyMove(1,tok,dest);}
+      }); return;
+    }
+  }
+  const{d1,d2,total}=doRoll();
+  G.d1=d1; G.d2=d2; G.roll=total;
+  SFX.roll(); showDice(d1,d2,total,G.chain?'chn':null);
+  setTimeout(function(){
+    if(total===0){
+      const m=p2lbl()+' rolled 0'+(G.chain?' — chain ends':' — no move')+'. Turn passes.';
+      addH('cpu',m); G.hN++; G.chain=false; G.busy=false; setSt(m,false); setTimeout(endTurn,1200); return;
+    }
+    const ch=cpuBest(total);
+    if(!ch){
+      const m=p2lbl()+' rolled '+total+' — no valid moves. Turn passes.';
+      addH('cpu',m); G.hN++; G.chain=false; G.busy=false; setSt(m,false); setTimeout(endTurn,1200); return;
+    }
+    const{tok,d:dest}=ch; const er=eRoll(1,tok,total);
+    const mod=tok.t==='knight'?' (+2)':ROY.has(tok.t)?' (−1)':'';
+    const od=d2===null?' (opening — one die)':'';
+    if(er!==total) showDice(d1,d2,er,'bon');
+    const m=p2lbl()+' rolled '+er+mod+od+' — '+tok.l+' to '+CC[dest]+(G.chain?' ⚔':'');
+    addH('cpu',m); setSt(m,G.chain);
+    setTimeout(function(){
+      const ib=tok.cell<0, oc=tok.cell;
+      const p=path1(1,tok,er,ib,dest); tok.cell=oc;
+      if(p&&p.length>1) animPath(tok,p.slice(0,p.length-1),function(){tok.cell=oc;G.busy=false;applyMove(1,tok,dest);});
+      else{G.busy=false;applyMove(1,tok,dest);}
+    },800);
+  },700);
+}
+
+function animPath(tok,pts,done,delay){
+  delay=delay||220;
+  G.anim=true; render(); let i=0;
+  function nx(){
+    if(i>=pts.length){G.anim=false;done();return;}
+    tok.cell=pts[i]; render();
+    const d=document.getElementById('c'+pts[i]); if(d)d.classList.add('animating');
+    SFX.step();
+    i++;
+    setTimeout(function(){if(d)d.classList.remove('animating');nx();},delay);
+  }
+  nx();
+}
+
+function endTurn(){
+  G.ift=false; // first turn fully over, switch to two dice from now on
+  // Count down cooldowns for the player whose turn is ENDING
+  G.pl[G.turn].bench.forEach(function(tok){
+    if(tok.cd>0) tok.cd--;
+  });
+  // Track CPU turns for ROY deployment restriction
+  if(G.turn===1) G.cpuTurnCount=(G.cpuTurnCount||0)+1;
+  G.turn=1-G.turn; G.phase='roll'; G.sel=null; G.rch=new Set();
+  G.roll=0; G.d1=null; G.d2=null; G.busy=false; G.anim=false;
+  G.csm=false; G.chain=false; G.snm=false;
+  document.getElementById('csp-popup').classList.remove('open');
+  
+  if(G.turn===0){resetDice();render();}  // last CPU message stays until player acts
+  else{resetDice();render();if(G.p2human){setSt(p2lbl()+"'s Turn - Roll Dice",false);}else{setSt('CPU deliberates...',false);setTimeout(cpuTurn,800);}}
+}
+
+function endGame(pid){
+  G.anim=false; render();
+  const m=pid===0?'Victory! The Royal Convoy reached safety.':'Defeat! The kingdom falls...';
+  addH(pid===0?'p1':'cpu',m);
+  if(pid===0)SFX.win();else SFX.defeat();
+  document.getElementById('btn-roll').disabled=true;
+  setTimeout(function(){showStatsScreen(pid);},1800);
+}
+
+function showStatsScreen(pid){
+  const won=pid===0;
+  const EMOJIS={knight:'🐴',shield:'🛡️',siege:'⚙️',thief:'🗡️',archer:'🏹',merchant:'🤠',sword:'⚔️',soldier:'🚶',king:'🤴',queen:'👸'};
+  function tbl(plid,label,cls){
+    let h='<div class="team-head '+cls+'">'+label+'</div>';
+    h+='<table><thead><tr><th>Unit</th><th>Moves</th><th>Kills</th><th>Coins</th><th>Castles</th><th>Finishes</th><th>Deaths</th></tr></thead><tbody>';
+    G.pl[plid].bench.forEach(function(tok){
+      const lives=tok.lives===null?'∞':['💀','I','II','III'][tok.lives]||tok.lives;
+      const dead=tok.lives!==null&&tok.lives<=0;
+      const em=EMOJIS[tok.t]||tok.t;
+      h+='<tr'+(dead?' style="opacity:.45"':'')+'>'+
+        '<td>'+em+' '+tok.l+(tok.lives!==null?' <span style="font-size:8px;color:#8A6030">('+lives+')</span>':'')+'</td>'+
+        '<td>'+tok.st.moves+'</td>'+
+        '<td>'+(tok.st.kills>0?'<b>'+tok.st.kills+'</b>':tok.st.kills)+'</td>'+
+        '<td>'+(tok.st.coins>0?'<b>'+tok.st.coins+'</b>':tok.st.coins)+'</td>'+
+        '<td>'+tok.st.castles+'</td>'+
+        '<td>'+(tok.st.finishes>0?'<b>'+tok.st.finishes+'</b>':tok.st.finishes)+'</td>'+
+        '<td>'+(tok.st.deaths>0?'<span style="color:#AA3A2A"><b>'+tok.st.deaths+'</b></span>':tok.st.deaths)+'</td>'+
+        '</tr>';
+    });
+    h+='</tbody></table>';
+    return h;
+  }
+  const el=document.getElementById('stats-screen');
+  let h='<h2>'+(won?'⚔ VICTORY ⚔':'✦ DEFEAT ✦')+'</h2>';
+  h+='<div class="ss-sub">'+(won?'Both Royals reached safety — the kingdom is secure!':'Both enemy Royals escaped — the kingdom falls...')+'</div>';
+  h+=tbl(0,'⚜ PLAYER','p1-head');
+  h+=tbl(1,'⚜ ENEMY (CPUMP2)','cpu-head');
+  h+='<button class="ss-btn" onclick="closeStats()">Play Again</button>';
+  el.innerHTML=h;
+  el.style.display='block';
+}
+
+function closeStats(){
+  document.getElementById('stats-screen').style.display='none';
+  newGame();
+}
+
+// Start on load
+window.addEventListener('load', function(){
+  // Show empty board on load, wait for player to choose mode
+  const blankSqs=[];
+  for(let i=0;i<ROWS*COLS;i++){if(CT[i]==='blank')blankSqs.push(i);}
+  const treeSqs=new Map();
+  const ACCENTS=[
+    {e:'🪨',p:0.15},{e:'🍄',p:0.10},{e:'🪵',p:0.10},{e:'🌿',p:0.08},
+    {e:'🐺',p:0.04},{e:'🦌',p:0.04},{e:'🐗',p:0.04},{e:'🐇',p:0.04},{e:'🦉',p:0.04}
+  ];
+  const slots=[{dx:-33,dy:-33},{dx:0,dy:-33},{dx:33,dy:-33},{dx:-33,dy:0},{dx:0,dy:0},{dx:33,dy:0},{dx:-33,dy:33},{dx:0,dy:33},{dx:33,dy:33}];
+  blankSqs.forEach(function(i){
+    const items=[], sh=[...slots].sort(()=>Math.random()-.5);
+    let si=0;
+    const nt=4+Math.floor(Math.random()*4);
+    const TREES=['🌲','🌳','🌲','🌳','🌲'];
+    for(let t=0;t<nt&&si<sh.length;t++,si++){
+      items.push({e:TREES[Math.floor(Math.random()*TREES.length)],dx:sh[si].dx+(Math.random()*10-5),dy:sh[si].dy+(Math.random()*10-5),sz:(function(){var r=Math.random();return r<0.5?Math.floor(Math.random()*3)+10:r<0.8?Math.floor(Math.random()*3)+14:Math.floor(Math.random()*4)+18;}())});
+    }
+    ACCENTS.forEach(function(a){
+      if(si<sh.length&&Math.random()<a.p){
+        items.push({e:a.e,dx:sh[si].dx+(Math.random()*10-5),dy:sh[si].dy+(Math.random()*10-5),sz:(function(){var r=Math.random();return r<0.5?Math.floor(Math.random()*3)+9:r<0.8?Math.floor(Math.random()*3)+13:Math.floor(Math.random()*3)+17;}())});
+        si++;
+      }
+    });
+    treeSqs.set(i,items);
+  });
+  G={turn:0,phase:'idle',roll:0,d1:null,d2:null,treeSqs,
+     ift:true,csa:1,csm:false,chain:false,cpuTurnCount:0,p2human:false,
+     sel:null,rch:new Set(),busy:false,anim:false,snm:false,
+     hN:0,hist:[],
+     pl:[mkPl(0),mkPl(1)]};
+  buildDOM(); render();
+  document.getElementById('mode-modal').classList.add('show');
+});
+</script>
+</body>
+</html>
