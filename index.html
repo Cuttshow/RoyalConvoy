@@ -189,8 +189,9 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
   <div id="mode-box">
     <h2>⚔ ROYAL CONVOY ⚔</h2>
     <p>Choose your opponent</p>
-    <button class="mode-btn" onclick="startGame(false)">⚔ Player vs CPU</button>
-    <button class="mode-btn" onclick="startGame(true)">👥 Player vs Player</button>
+    <button class="mode-btn" onclick="startGame(false,false)">⚔ Player vs CPU</button>
+    <button class="mode-btn" onclick="startGame(true,false)">👥 Player vs Player</button>
+    <button class="mode-btn" onclick="startGame(false,true)" style="background:#EAD0C0;border-color:#8A4020">💀 Player vs CPU (Hard)</button>
   </div>
 </div>
 <div id="gold-flash">✦ CPU spends gold to move! ✦</div>
@@ -674,7 +675,7 @@ function mkPl(pid){
   return{id:pid,score:0,royDone:0,coins:0,bench:UNITS.map((u,i)=>({
     id:'p'+pid+'-'+i, t:u.t, l:u.l, f:u.f,
     cell:-1, sUp:u.t==='shield', sBr:false, done:false,
-    lives:ROY.has(u.t)||u.t==='soldier'?null:2,
+    lives:ROY.has(u.t)||u.t==='soldier'?null:(pid===0&&G.hardMode?1:2),
     cd:0,
     st:{moves:0,kills:0,coins:0,castles:0,finishes:0,deaths:0}
   }))};
@@ -730,7 +731,7 @@ function _startGame(ft){
   });
   G={turn:ft, phase:'roll', roll:0, d1:null, d2:null, treeSqs,
      ift:true, // is first turn (single die)
-     csa:1, csm:false, chain:false, cpuTurnCount:0, p2human:G.p2human||false,
+     csa:1, csm:false, chain:false, cpuTurnCount:0, p2human:G.p2human||false, hardMode:G.hardMode||false,
      sel:null, rch:new Set(), busy:false, anim:false, snm:false,
      hist:[], hN:1,
      pl:[mkPl(0),mkPl(1)]};
@@ -972,9 +973,10 @@ function setSt(msg,chain){
 // HUMAN TURN
 // ═══════════════════════════════════════════
 var _pendingFt=0;
-function startGame(p2human){
+function startGame(p2human,hardMode){
   document.getElementById('mode-modal').classList.remove('show');
   G.p2human=p2human;
+  G.hardMode=hardMode||false;
   // Toss coin before starting
   _pendingFt=Math.random()<0.5?0:1;
   var heads=_pendingFt===0;
