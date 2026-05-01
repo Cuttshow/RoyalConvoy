@@ -177,6 +177,7 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
 .king-btn.kdisabled{opacity:.35;cursor:default;pointer-events:none}
 .king-swatch{width:36px;height:36px;border-radius:50%;flex-shrink:0;border:2px solid rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;font-size:18px}
 .king-name{font-family:Georgia,serif;font-size:13px;font-weight:700;color:#3A2808}
+.king-bonus{font-family:Georgia,serif;font-size:10px;color:#8A6030;font-style:italic;margin-top:2px}
 #king-cpu-msg{font-family:Georgia,serif;font-size:13px;color:#5C3D0A;margin:8px 0 14px;min-height:18px;font-style:italic}
 #outcome-modal{display:none;position:fixed;inset:0;background:rgba(60,32,8,.82);z-index:203;align-items:center;justify-content:center}
 #outcome-modal.show{display:flex}
@@ -712,7 +713,17 @@ function path1(pid,tok,steps,bench,dest){
   return null;
 }
 
-function gtok(pid,tok,roll){const er=eRoll(pid,tok,roll);if(er<=0)return new Set();return reach(pid,tok,er,tok.cell<0);}
+function gtok(pid,tok,roll){
+  const er=eRoll(pid,tok,roll),ib=tok.cell<0;
+  if(er<=0) return new Set();
+  var kid=pid===0?G.p1KingId:G.p2KingId;
+  if(tok.t==='knight'&&kid==='elijah'){
+    var s=new Set();
+    [er-2,er-1,er].forEach(function(steps){if(steps>0)reach(pid,tok,steps,ib).forEach(function(c){s.add(c);});});
+    return s;
+  }
+  return reach(pid,tok,er,ib);
+}
 function canMove(tok,pid,roll){if(tok.done)return false;if(tok.lives!==null&&tok.lives<=0)return false;if(tok.cd>0)return false;return gtok(pid,tok,roll).size>0;}
 function movable(pid,roll){return G.pl[pid].bench.filter(t=>!t.done&&canMove(t,pid,roll));}
 function fTok(id){for(const p of G.pl)for(const t of p.bench)if(t.id===id)return t;return null;}
@@ -780,10 +791,11 @@ function _startGame(ft){
   });
   G={turn:ft, phase:'roll', roll:0, d1:null, d2:null, treeSqs,
      ift:true, // is first turn (single die)
-     csa:1, csm:false, chain:false, cpuTurnCount:0, p2human:G.p2human||false, hardMode:G.hardMode||false,
+     csa:1, csm:false, chain:false, cpuTurnCount:0, p2human:G.p2human||false, hardMode:G.hardMode||false, p1KingId:G.p1KingId||'', p2KingId:G.p2KingId||'',
      sel:null, rch:new Set(), busy:false, anim:false, snm:false,
      hist:[], hN:1,
      pl:[mkPl(0),mkPl(1)]};
+  applyKingdomBonuses();
   histOpen=false;
   document.getElementById('hp').classList.remove('open');
   document.getElementById('chev').classList.remove('open');
@@ -1055,6 +1067,8 @@ function startGame(p2human,hardMode){
 function _goToCoinToss(){
   G.p2human=_pendingP2h;
   G.hardMode=_pendingHard;
+  G.p1KingId=_p1K?_p1K.id:'';
+  G.p2KingId=_p2K?_p2K.id:'';
   // Toss coin before starting
   _pendingFt=Math.random()<0.5?0:1;
   var heads=_pendingFt===0;
@@ -1090,10 +1104,10 @@ function toggleP2(isHuman){
   render();
 }
 var KINGDOMS=[
-  {id:'john',   name:'King John the Benevolent', short:'King John',   queenName:'Queen Andrea',      bg:'#A8C4E0',stroke:'#4A7AAA', privBg:'#D8E8F8',privBorder:'#4A7AAA'},
-  {id:'adam',   name:'King Adam the Brave',       short:'King Adam',   queenName:'Queen Anastassiya', bg:'#E0A8A8',stroke:'#AA4A4A', privBg:'#F8D8D8',privBorder:'#AA4A4A'},
-  {id:'joshua', name:'King Joshua the Wise',      short:'King Joshua', queenName:'Queen Amy',         bg:'#A8D4A8',stroke:'#3A8A4A', privBg:'#D4EED4',privBorder:'#3A8A4A'},
-  {id:'elijah', name:'King Elijah the Brutal',    short:'King Elijah', queenName:'Queen Kerylyn',     bg:'#C4A8D4',stroke:'#7A4A9A', privBg:'#E8D8F0',privBorder:'#7A4A9A'}
+  {id:'john',   name:'King John the Benevolent', short:'King John',   queenName:'Queen Andrea',      bonus:'Starts with 2 gold coins',                   bg:'#A8C4E0',stroke:'#4A7AAA', privBg:'#D8E8F8',privBorder:'#4A7AAA'},
+  {id:'adam',   name:'King Adam the Brave',       short:'King Adam',   queenName:'Queen Anastassiya', bonus:'Sword & Archer begin with an extra life',    bg:'#E0A8A8',stroke:'#AA4A4A', privBg:'#F8D8D8',privBorder:'#AA4A4A'},
+  {id:'joshua', name:'King Joshua the Wise',      short:'King Joshua', queenName:'Queen Amy',         bonus:'Units rest only 3 turns on the bench',       bg:'#A8D4A8',stroke:'#3A8A4A', privBg:'#D4EED4',privBorder:'#3A8A4A'},
+  {id:'elijah', name:'King Elijah the Brutal',    short:'King Elijah', queenName:'Queen Kerylyn',     bonus:'Knight chooses roll, roll+1, or roll+2',     bg:'#C4A8D4',stroke:'#7A4A9A', privBg:'#E8D8F0',privBorder:'#7A4A9A'}
 ];
 var _p1K=null,_p2K=null,_pendingP2h=false,_pendingHard=false;
 
@@ -1104,7 +1118,7 @@ function _buildKingBtns(taken,onPick){
     var dis=taken.indexOf(k.id)!==-1;
     var b=document.createElement('button');
     b.className='king-btn'+(dis?' kdisabled':'');
-    b.innerHTML='<div class="king-swatch" style="background:'+k.bg+';border-color:'+k.stroke+'">👑</div><div class="king-name">'+k.name+'</div>';
+    b.innerHTML='<div class="king-swatch" style="background:'+k.bg+';border-color:'+k.stroke+'">👑</div><div><div class="king-name">'+k.name+'</div><div class="king-bonus">'+k.bonus+'</div></div>';
     if(!dis) b.onclick=function(){document.getElementById('king-modal').classList.remove('show');onPick(k);};
     c.appendChild(b);
   });
@@ -1139,7 +1153,7 @@ function cpuPickKing(onDone){
     var b=document.createElement('button');
     b.className='king-btn'+(dis?' kdisabled':'');
     b.style.outline=k.id===pick.id?'3px solid '+k.stroke:'none';
-    b.innerHTML='<div class="king-swatch" style="background:'+k.bg+';border-color:'+k.stroke+'">👑</div><div class="king-name">'+k.name+'</div>';
+    b.innerHTML='<div class="king-swatch" style="background:'+k.bg+';border-color:'+k.stroke+'">👑</div><div><div class="king-name">'+k.name+'</div><div class="king-bonus">'+k.bonus+'</div></div>';
     c.appendChild(b);
   });
   document.getElementById('king-modal').classList.add('show');
@@ -1211,6 +1225,18 @@ function dismissRoyalArrival(){
   document.getElementById('royal-arrival-modal').classList.remove('show');
   if(_arrivalCB){var cb=_arrivalCB;_arrivalCB=null;cb();}
 }
+function applyKingdomBonuses(){
+  [0,1].forEach(function(pid){
+    var kid=pid===0?G.p1KingId:G.p2KingId;
+    if(kid==='john') G.pl[pid].coins+=2;
+    if(kid==='adam'){
+      G.pl[pid].bench.forEach(function(tok){
+        if((tok.t==='sword'||tok.t==='archer')&&tok.lives!==null)
+          tok.lives=Math.min(3,tok.lives+1);
+      });
+    }
+  });
+}
 function p2lbl(){return G&&G.p2human?'P2':'CPU';}
 function p1lbl(){return 'P1';}
 function doRoll(){
@@ -1259,8 +1285,11 @@ function moveTo(dest){
   const tok=fTok(G.sel); if(!tok) return;
   const pid=G.turn;
   G.sel=null; G.rch=new Set(); G.snm=false;
-  const er=eRoll(pid,tok,G.roll);
+  var er=eRoll(pid,tok,G.roll);
   const isB=tok.cell<0;
+  if(tok.t==='knight'&&(pid===0?G.p1KingId:G.p2KingId)==='elijah'){
+    for(var ts=G.roll;ts<=G.roll+2;ts++){if(reach(pid,tok,ts,isB).has(dest)){er=ts;break;}}
+  }
   const p=path1(pid,tok,er,isB,dest);
   if(p&&p.length>1){
     const origCell=tok.cell;
@@ -1280,7 +1309,10 @@ function bench(pid,tok,captured){
     tok.st.deaths++;
     if(tok.lives!==null&&tok.lives>0) tok.lives--;
     // Only apply cooldown if not permanently eliminated
-    if(tok.lives===null||tok.lives>0) tok.cd=4;
+    if(tok.lives===null||tok.lives>0){
+      var kid2=pid===0?G.p1KingId:G.p2KingId;
+      tok.cd=(kid2==='joshua')?3:4;
+    }
   }
 }
 function steal(pid,opp,ot){
@@ -1366,7 +1398,7 @@ function applyMove(pid,tok,dest){
       });
     } else {
       // NROY returns to bench — gains a life (max 3), shield resets
-      tok.cell=-1; tok.done=false; tok.st.finishes++; tok.cd=4;
+      tok.cell=-1; tok.done=false; tok.st.finishes++; tok.cd=(pid===0?G.p1KingId:G.p2KingId)==='joshua'?3:4;
       if(tok.t==='shield'){tok.sUp=true;tok.sBr=false;}
       if(tok.lives!==null&&tok.lives<3) tok.lives++;
       G.hN++; render();
@@ -1915,6 +1947,7 @@ window.addEventListener('load', function(){
      sel:null,rch:new Set(),busy:false,anim:false,snm:false,
      hN:0,hist:[],
      pl:[mkPl(0),mkPl(1)]};
+  applyKingdomBonuses();
   buildDOM(); render();
   document.getElementById('mode-modal').classList.add('show');
 });
