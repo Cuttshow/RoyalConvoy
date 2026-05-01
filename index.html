@@ -22,7 +22,7 @@ body{font-family:Georgia,serif;background:#F2E6C8;touch-action:manipulation;disp
 .row-label{display:flex;align-items:center;justify-content:flex-end;font-size:clamp(6px,.9vh,9px);font-weight:700;color:#8A6030;padding-right:2px}
 #board-grid{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(16,1fr);gap:2px;min-height:0}
 .cell{background:#E8D4A0;border:1.5px solid #C4A050;border-radius:4px;display:flex;align-items:center;justify-content:center;position:relative;cursor:default;min-width:0;min-height:0;overflow:visible}
-.cell.reroll{background:#E8EDD8;border-color:#6A8A2A}
+.cell.reroll{background-color:#D9C99A!important;background-image:radial-gradient(ellipse at 20% 30%,rgba(180,150,80,.25) 0%,transparent 40%),radial-gradient(ellipse at 70% 70%,rgba(160,130,60,.2) 0%,transparent 35%),radial-gradient(ellipse at 50% 50%,rgba(200,175,110,.15) 0%,transparent 50%);border-color:#C4A050!important}
 .cell.castle{background:#E0DDD8;border-color:#A0A098;border-width:2px}
 .cell.dest1{background:#C8D8F0;border-color:#4A6AA0;border-width:2px}
 .cell.dest2{background:#F0C8C8;border-color:#A04A4A;border-width:2px}
@@ -185,6 +185,13 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
 #outcome-text{font-family:Georgia,serif;font-size:14px;color:#5C3D0A;line-height:1.7;margin-bottom:22px;font-style:italic}
 #outcome-go{padding:10px 28px;border-radius:6px;border:1.5px solid #A07820;background:#5C3D0A;color:#F5EDD6;font-size:13px;font-weight:700;font-family:Georgia,serif;cursor:pointer;letter-spacing:.5px}
 #outcome-go:hover{background:#3A2808}
+#royal-arrival-modal{display:none;position:fixed;inset:0;background:rgba(60,32,8,.7);z-index:204;align-items:center;justify-content:center}
+#royal-arrival-modal.show{display:flex}
+#royal-arrival-box{background:#F5EDD6;border:2px solid #A07820;border-radius:8px;padding:24px 28px;text-align:center;max-width:340px;width:92%}
+#royal-arrival-icon{font-size:40px;display:block;margin-bottom:10px}
+#royal-arrival-text{font-family:Georgia,serif;font-size:14px;color:#5C3D0A;line-height:1.7;margin-bottom:18px;font-style:italic}
+#royal-arrival-go{padding:9px 24px;border-radius:6px;border:1.5px solid #A07820;background:#5C3D0A;color:#F5EDD6;font-size:13px;font-weight:700;font-family:Georgia,serif;cursor:pointer;letter-spacing:.5px}
+#royal-arrival-go:hover{background:#3A2808}
 </style>
 </head>
 <body>
@@ -202,6 +209,13 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
     <p id="king-sub">Select the king you will lead into battle</p>
     <div id="king-cpu-msg"></div>
     <div id="king-btns"></div>
+  </div>
+</div>
+<div id="royal-arrival-modal">
+  <div id="royal-arrival-box">
+    <span id="royal-arrival-icon">👑</span>
+    <div id="royal-arrival-text"></div>
+    <button id="royal-arrival-go" onclick="dismissRoyalArrival()">Huzzah!</button>
   </div>
 </div>
 <div id="outcome-modal">
@@ -799,11 +813,11 @@ function openCS(){
   document.getElementById('csv').textContent=1;
   document.getElementById('cst').textContent=1;
   document.getElementById('cm').disabled=true;
-  document.getElementById('cp2').disabled=G.pl[0].coins<=1;
+  document.getElementById('cp2').disabled=G.pl[G.turn].coins<=1;
   setSt('Choose coins — each = 1 step. Royals & Merchant excluded.',false); // clears CPU msg
 }
 function adjCS(d){
-  const max=G.pl[0].coins;
+  const max=G.pl[G.turn].coins;
   G.csa=Math.max(1,Math.min(max,G.csa+d));
   document.getElementById('csv').textContent=G.csa;
   document.getElementById('cst').textContent=G.csa;
@@ -844,6 +858,16 @@ function buildDOM(){
 
 function render(){
   rBench(0); rBench(1); rBoard();
+  // Apply kingdom colours to private squares
+  var p1k=_p1K||KINGDOMS[0], p2k=_p2K||KINGDOMS[1];
+  var styleTag=document.getElementById('kingdom-styles');
+  if(!styleTag){styleTag=document.createElement('style');styleTag.id='kingdom-styles';document.head.appendChild(styleTag);}
+  styleTag.textContent='.cell.priv1{background:'+p1k.privBg+'!important;border-color:'+p1k.privBorder+'!important}'+
+    '.cell.priv2{background:'+p2k.privBg+'!important;border-color:'+p2k.privBorder+'!important}'+
+    '.cell.dest1{background:'+p1k.privBg+'!important;border-color:'+p1k.privBorder+'!important;border-width:2px}'+
+    '.cell.dest2{background:'+p2k.privBg+'!important;border-color:'+p2k.privBorder+'!important;border-width:2px}'+
+    '#c10{background:'+p1k.privBg+'!important;border-color:'+p1k.privBorder+'!important}'+
+    '#c14{background:'+p2k.privBg+'!important;border-color:'+p2k.privBorder+'!important}';
   var lbl=document.getElementById('p2-label');
   if(lbl) lbl.textContent=G&&G.p2human?'Player 2':'CPU';
   var h1=document.getElementById('p1-king-name');
@@ -957,7 +981,7 @@ function rBoard(){
       if(tok.t==='shield'&&tok.sBr) p.insertAdjacentHTML('beforeend',crSVG(36));
       if(!G.anim&&G.phase==='select'&&G.turn===pid&&(pid===0||(pid===1&&G.p2human))){
         const ic2=G.d1===null&&G.d2===null;
-        if(!(ic2&&NCS.has(tok.t))&&canMove(tok,0,G.roll)){
+        if(!(ic2&&NCS.has(tok.t))&&canMove(tok,pid,G.roll)){
           p.classList.add('clickable');
           p.onclick=function(e){e.stopPropagation();selTok(tok.id);};
         }
@@ -1066,10 +1090,10 @@ function toggleP2(isHuman){
   render();
 }
 var KINGDOMS=[
-  {id:'john',   name:'King John the Benevolent', short:'King John',   bg:'#A8C4E0',stroke:'#4A7AAA'},
-  {id:'adam',   name:'King Adam the Brave',       short:'King Adam',   bg:'#E0A8A8',stroke:'#AA4A4A'},
-  {id:'joshua', name:'King Joshua the Wise',      short:'King Joshua', bg:'#A8D4A8',stroke:'#3A8A4A'},
-  {id:'elijah', name:'King Elijah the Brutal',    short:'King Elijah', bg:'#C4A8D4',stroke:'#7A4A9A'}
+  {id:'john',   name:'King John the Benevolent', short:'King John',   queenName:'Queen Andrea',      bg:'#A8C4E0',stroke:'#4A7AAA', privBg:'#D8E8F8',privBorder:'#4A7AAA'},
+  {id:'adam',   name:'King Adam the Brave',       short:'King Adam',   queenName:'Queen Anastassiya', bg:'#E0A8A8',stroke:'#AA4A4A', privBg:'#F8D8D8',privBorder:'#AA4A4A'},
+  {id:'joshua', name:'King Joshua the Wise',      short:'King Joshua', queenName:'Queen Amy',         bg:'#A8D4A8',stroke:'#3A8A4A', privBg:'#D4EED4',privBorder:'#3A8A4A'},
+  {id:'elijah', name:'King Elijah the Brutal',    short:'King Elijah', queenName:'Queen Kerylyn',     bg:'#C4A8D4',stroke:'#7A4A9A', privBg:'#E8D8F0',privBorder:'#7A4A9A'}
 ];
 var _p1K=null,_p2K=null,_pendingP2h=false,_pendingHard=false;
 
@@ -1155,6 +1179,37 @@ function showOutcome(winPid){
 function dismissOutcome(){
   document.getElementById('outcome-modal').classList.remove('show');
   if(_pendingStats!==null){showStatsScreen(_pendingStats);_pendingStats=null;}
+}
+var ARRIVAL_LINES_KING=[
+  function(n){return n+' has reached the Royal Tourney!';},
+  function(n){return 'The King arrives! '+n+' rides into Valdenmoor!';},
+  function(n){return n+' rides triumphant through the gates of Valdenmoor!';},
+  function(n){return 'Fanfare! '+n+' has reached the Royal Tourney!';},
+  function(n){return n+' has arrived safely. The kingdom rejoices!';},
+  function(n){return 'Against all odds, '+n+' has reached the Royal Tourney!'}
+];
+var ARRIVAL_LINES_QUEEN=[
+  function(n){return n+' has reached the Royal Tourney!';},
+  function(n){return 'The Queen arrives! '+n+' rides into Valdenmoor!';},
+  function(n){return 'Huzzah! '+n+' has reached the Royal Tourney safely!';},
+  function(n){return 'Fanfare! '+n+' has reached the Royal Tourney!';},
+  function(n){return n+' arrives in splendour. Long live the Queen!';},
+  function(n){return n+' has arrived safely. The kingdom rejoices!'}
+];
+var _arrivalCB=null;
+function showRoyalArrival(pid,isQueen,onDone){
+  var k=pid===0?_p1K:_p2K;
+  var royalName=isQueen?(k?k.queenName:'the Queen'):(k?k.name:'the King');
+  var lines=isQueen?ARRIVAL_LINES_QUEEN:ARRIVAL_LINES_KING;
+  var line=lines[Math.floor(Math.random()*lines.length)](royalName);
+  document.getElementById('royal-arrival-icon').textContent=isQueen?'👸':'🤴';
+  document.getElementById('royal-arrival-text').textContent=line;
+  _arrivalCB=onDone;
+  document.getElementById('royal-arrival-modal').classList.add('show');
+}
+function dismissRoyalArrival(){
+  document.getElementById('royal-arrival-modal').classList.remove('show');
+  if(_arrivalCB){var cb=_arrivalCB;_arrivalCB=null;cb();}
 }
 function p2lbl(){return G&&G.p2human?'P2':'CPU';}
 function p1lbl(){return 'P1';}
@@ -1303,9 +1358,12 @@ function applyMove(pid,tok,dest){
       tok.done=true; tok.cell=-1; tok.st.finishes++;
       G.pl[pid].royDone=(G.pl[pid].royDone||0)+1;
       G.hN++; render();
-      if(G.pl[pid].royDone>=2){endGame(pid);return;}
-      const m=tok.l+' reaches safety! Royals safe: '+G.pl[pid].royDone+'/2';
-      addH(who,m); setSt(m,false);
+      showRoyalArrival(pid,tok.t==='queen',function(){
+        if(G.pl[pid].royDone>=2){endGame(pid);return;}
+        const m=tok.l+' reaches safety! Royals safe: '+G.pl[pid].royDone+'/2';
+        addH(who,m); setSt(m,false);
+        if(pid===1&&!G.p2human) setTimeout(endTurn,600); else endTurn();
+      });
     } else {
       // NROY returns to bench — gains a life (max 3), shield resets
       tok.cell=-1; tok.done=false; tok.st.finishes++; tok.cd=4;
