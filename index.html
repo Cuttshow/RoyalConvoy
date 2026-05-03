@@ -189,6 +189,15 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
 #splash-img.loaded{opacity:1}
 #splash-btn{position:relative;z-index:2;margin-top:auto;margin-bottom:48px;padding:14px 40px;background:rgba(92,61,10,0.88);color:#F5EDD6;font-family:Georgia,serif;font-size:16px;font-weight:700;border:2px solid #C8A030;border-radius:8px;cursor:pointer;letter-spacing:2px;text-shadow:0 1px 3px rgba(0,0,0,0.5);box-shadow:0 4px 20px rgba(0,0,0,0.5);transition:background 0.2s}
 #splash-btn:hover{background:rgba(58,40,8,0.95)}
+#map-modal{display:none;position:fixed;inset:0;background:rgba(60,32,8,.75);z-index:202;align-items:center;justify-content:center}
+#map-modal.show{display:flex}
+#map-box{background:#F5EDD6;border:2px solid #A07820;border-radius:8px;padding:24px 28px;text-align:center;max-width:400px;width:92%}
+#map-box h2{font-family:Georgia,serif;font-size:15px;font-weight:700;color:#3A2808;margin-bottom:6px;letter-spacing:1px}
+#map-box p{font-family:Georgia,serif;font-size:11px;color:#8A6030;margin-bottom:16px}
+.map-btn{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border-radius:6px;border:2px solid #A07820;background:#F5EDD6;cursor:pointer;text-align:left}
+.map-btn:hover{background:#EAD8B0}
+.map-icon{width:48px;height:36px;flex-shrink:0;border:1.5px solid #A07820;border-radius:3px;background:#D9C99A;display:flex;align-items:center;justify-content:center;font-size:20px}
+.map-name{font-family:Georgia,serif;font-size:13px;font-weight:700;color:#3A2808}
 #king-cpu-msg{font-family:Georgia,serif;font-size:13px;color:#5C3D0A;margin:8px 0 14px;min-height:18px;font-style:italic}
 #outcome-modal{display:none;position:fixed;inset:0;background:rgba(60,32,8,.82);z-index:203;align-items:center;justify-content:center}
 #outcome-modal.show{display:flex}
@@ -224,6 +233,21 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
 
 <div id="stats-screen"></div>
 
+<div id="map-modal">
+  <div id="map-box">
+    <h2>⚔ CHOOSE YOUR BATTLEFIELD ⚔</h2>
+    <p>Select the map for this convoy</p>
+    <button class="map-btn" onclick="selectMap('tkr')">
+      <div class="map-icon">🗺</div>
+      <div><div class="map-name">The King's Road</div></div>
+    </button>
+    <div style="margin:8px 0"></div>
+    <button class="map-btn" onclick="selectMap('map2')">
+      <div class="map-icon">🗺</div>
+      <div><div class="map-name">The Contested Crossing</div></div>
+    </button>
+  </div>
+</div>
 <div id="king-modal">
   <div id="king-box">
     <h2 id="king-title">⚜ CHOOSE YOUR KINGDOM ⚜</h2>
@@ -259,7 +283,7 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
 <div id="coin-modal">
   <div id="coin-box">
     <h2>⚔ THE COIN IS TOSSED ⚔</h2>
-    <span id="coin-emoji">🪙</span>
+    <div id="coin-emoji" style="font-size:52px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;line-height:1">🪙</div>
     <div id="coin-result"></div>
     <button id="coin-go" onclick="coinDismiss()">Let's Go!</button>
   </div>
@@ -271,7 +295,7 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
 <div id="mode-modal">
   <div id="mode-box">
     <h2>⚔ ROYAL CONVOY ⚔</h2>
-    <p>Choose your opponent</p>
+    <p>Select Game Mode</p>
     <button class="mode-btn" onclick="startGame(false,false)">⚔ Player vs CPU</button>
     <button class="mode-btn" onclick="startGame(true,false)">👥 Player vs Player</button>
     <button class="mode-btn" onclick="startGame(false,true)" style="background:#EAD0C0;border-color:#8A4020">💀 Player vs CPU (Hard)</button>
@@ -364,23 +388,43 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
 // ═══════════════════════════════════════════
 const COLS=5,ROWS=16;
 const ix=(c,r)=>(r-1)*5+(c-1);
-const SP1=ix(1,1),DP1=ix(1,16),SP2=ix(5,1),DP2=ix(5,16);
-
-// Private: C1R1-4,C1R14-16 / C5R1-4,C5R14-16
-const PRV1=new Set([ix(1,1),ix(1,2),ix(1,3),ix(1,4),ix(1,14),ix(1,15),ix(1,16)]);
-const PRV2=new Set([ix(5,1),ix(5,2),ix(5,3),ix(5,4),ix(5,14),ix(5,15),ix(5,16)]);
-const CAS=new Set([ix(3,4),ix(4,9),ix(3,11)]);
-const RRL=new Set([ix(1,3),ix(5,3),ix(3,8)]);
-const COI=new Set([ix(2,8),ix(3,13)]);
-
-const ACT=new Set([
+const MAPS=[
+  {
+    id:'tkr',name:"The King's Road",
+    SP1:ix(1,1),DP1:ix(1,16),SP2:ix(5,1),DP2:ix(5,16),
+    PRV1:new Set([ix(1,1),ix(1,2),ix(1,3),ix(1,4),ix(1,14),ix(1,15),ix(1,16)]),
+    PRV2:new Set([ix(5,1),ix(5,2),ix(5,3),ix(5,4),ix(5,14),ix(5,15),ix(5,16)]),
+    CAS:new Set([ix(3,4),ix(4,9),ix(3,11)]),
+    RRL:new Set([ix(1,3),ix(5,3),ix(3,8)]),
+    COI:new Set([ix(2,8),ix(3,13)]),
+    ACT:null
+  },
+  {
+    id:'map2',name:'The Contested Crossing',
+    SP1:ix(1,1),DP1:ix(1,16),SP2:ix(5,1),DP2:ix(5,16),
+    PRV1:new Set([ix(1,1),ix(2,1),ix(3,6),ix(3,7),ix(1,15),ix(2,15),ix(1,16)]),
+    PRV2:new Set([ix(4,1),ix(5,1),ix(3,9),ix(3,10),ix(4,15),ix(5,15),ix(5,16)]),
+    CAS:new Set([ix(2,5),ix(4,8),ix(2,11)]),
+    RRL:new Set([ix(3,3),ix(5,7),ix(1,9),ix(5,12)]),
+    COI:new Set([ix(5,6),ix(1,10)]),
+    ACT:new Set([ix(1,1),ix(2,1),ix(3,1),ix(4,1),ix(5,1),ix(3,2),ix(1,3),ix(2,3),ix(3,3),ix(1,4),ix(1,5),ix(2,5),ix(3,5),ix(4,5),ix(5,5),ix(3,6),ix(5,6),ix(3,7),ix(5,7),ix(1,8),ix(2,8),ix(3,8),ix(4,8),ix(5,8),ix(1,9),ix(3,9),ix(1,10),ix(3,10),ix(1,11),ix(2,11),ix(3,11),ix(4,11),ix(5,11),ix(5,12),ix(3,13),ix(4,13),ix(5,13),ix(3,14),ix(1,15),ix(2,15),ix(3,15),ix(4,15),ix(5,15),ix(1,16),ix(5,16)])
+  }
+];
+// Build TKR ACT (all 80 squares active)
+(function(){MAPS[0].ACT=new Set([
   ix(1,1),ix(1,2),ix(1,3),ix(1,4),ix(1,12),ix(1,13),ix(1,14),ix(1,15),ix(1,16),
   ix(5,1),ix(5,2),ix(5,3),ix(5,4),ix(5,12),ix(5,13),ix(5,14),ix(5,15),ix(5,16),
   ix(2,4),ix(2,5),ix(2,6),ix(2,8),ix(2,11),ix(2,13),
   ix(4,4),ix(4,5),ix(4,6),ix(4,9),ix(4,11),ix(4,13),
   ix(3,4),ix(3,6),ix(3,7),ix(3,8),ix(3,9),ix(3,10),ix(3,11),ix(3,12),ix(3,13),
   ix(1,11),ix(2,11),ix(3,11),ix(4,11),ix(5,11)
-]);
+]);})();
+// Active map state
+var _currentMap=MAPS[0];
+var SP1=_currentMap.SP1,DP1=_currentMap.DP1,SP2=_currentMap.SP2,DP2=_currentMap.DP2;
+var PRV1=_currentMap.PRV1,PRV2=_currentMap.PRV2;
+var CAS=_currentMap.CAS,RRL=_currentMap.RRL,COI=_currentMap.COI;
+var ACT=_currentMap.ACT
 
 const CT={};
 for(let i=0;i<ROWS*COLS;i++) CT[i]='blank';
@@ -655,7 +699,7 @@ function bfsD(dest){
   }
   return d;
 }
-const D1=bfsD(DP1),D2=bfsD(DP2);
+var D1=bfsD(DP1),D2=bfsD(DP2);
 function dtf(pid,cell){const d=pid===0?D1:D2;return d[cell]!==undefined?d[cell]:999;}
 
 function lbtg(lc){
@@ -671,6 +715,8 @@ function canLand(pid,tok,dest){
   const fr=G.pl[pid].bench.filter(t=>!t.done&&t.id!==tok.id&&t.cell===dest);
   const en=G.pl[opp].bench.filter(t=>!t.done&&t.cell===dest);
   const frNonMerch=fr.filter(t=>t.t!=='merchant');
+  var kid=pid===0?G.p1KingId:G.p2KingId;
+  if(tok.t==='queen'&&kid==='kasey') return en.length===0&&(fr.length===0||fr.length===1);
   if(ROY.has(tok.t)) return en.length===0&&fr.length===0;
   if(tok.t==='merchant') return fr.length+en.length<=1;
   if(tok.t==='siege'){
@@ -779,10 +825,12 @@ function mkPl(pid){
 }
 
 function newGame(){
+  showSplashBg();
   document.getElementById('mode-modal').classList.add('show');
 }
 function _startGame(ft){
   if(ft===undefined) ft=Math.random()<0.5?0:1;
+  loadMap(_selectedMapId||'tkr'); // ensure map constants & CT are set before forest generation
   // Generate forest using slot grid to prevent overlaps
   // Each blank cell uses a 3x3 grid of 9 slots; pick slots randomly for trees/accents
   const blankSqs=[];
@@ -911,12 +959,12 @@ function render(){
   var p1k=_p1K||KINGDOMS[0], p2k=_p2K||KINGDOMS[1];
   var styleTag=document.getElementById('kingdom-styles');
   if(!styleTag){styleTag=document.createElement('style');styleTag.id='kingdom-styles';document.head.appendChild(styleTag);}
+  var isTKR=_selectedMapId==='tkr'||!_selectedMapId;
   styleTag.textContent='.cell.priv1:not(.highlighted){background:'+p1k.privBg+'!important;border-color:'+p1k.privBorder+'!important}'+
     '.cell.priv2:not(.highlighted){background:'+p2k.privBg+'!important;border-color:'+p2k.privBorder+'!important}'+
     '.cell.dest1:not(.highlighted){background:'+p1k.privBg+'!important;border-color:'+p1k.privBorder+'!important;border-width:2px}'+
     '.cell.dest2:not(.highlighted){background:'+p2k.privBg+'!important;border-color:'+p2k.privBorder+'!important;border-width:2px}'+
-    '#c10:not(.highlighted){background:'+p1k.privBg+'!important;border-color:'+p1k.privBorder+'!important}'+
-    '#c14:not(.highlighted){background:'+p2k.privBg+'!important;border-color:'+p2k.privBorder+'!important}';
+    (isTKR?'#c10:not(.highlighted){background:'+p1k.privBg+'!important;border-color:'+p1k.privBorder+'!important}'+'#c14:not(.highlighted){background:'+p2k.privBg+'!important;border-color:'+p2k.privBorder+'!important}':'');
   var lbl=document.getElementById('p2-label');
   if(lbl) lbl.textContent=G&&G.p2human?'Player 2':'CPU';
   var h1=document.getElementById('p1-king-name');
@@ -1095,9 +1143,9 @@ function startGame(p2human,hardMode){
   showKingP1(function(k1){
     _p1K=k1;
     if(_pendingP2h){
-      showKingP2(function(k2){_p2K=k2;_goToCoinToss();});
+      showKingP2(function(k2){_p2K=k2;showMapSelect(_goToCoinToss);});
     } else {
-      cpuPickKing(function(k2){_p2K=k2;_goToCoinToss();});
+      cpuPickKing(function(k2){_p2K=k2;showMapSelect(_goToCoinToss);});
     }
   });
 }
@@ -1109,7 +1157,8 @@ function _goToCoinToss(){
   // Toss coin before starting
   _pendingFt=Math.random()<0.5?0:1;
   var heads=_pendingFt===0;
-  var winner=_pendingFt===0?'P1':(G.p2human?'P2':'CPU');
+  var wKing=_pendingFt===0?_p1K:_p2K;
+  var winner=wKing?wKing.name:(_pendingFt===0?'P1':(G.p2human?'P2':'CPU'));
   var modal=document.getElementById('coin-modal');
   var emoji=document.getElementById('coin-emoji');
   var result=document.getElementById('coin-result');
@@ -1127,13 +1176,17 @@ function _goToCoinToss(){
   // Reveal result emoji after animation completes
   setTimeout(function(){
     emoji.classList.remove('flip');
-    emoji.textContent=heads?'🤴':'👸';
-    result.textContent=(heads?'Heads! 🤴':'Tails! 👸')+' '+winner+' goes first!';
+    // Show winning kingdom's coloured circle with crown
+    var wk=heads?_p1K:_p2K;
+    var wbg=wk?wk.bg:'#A8C4E0', wst=wk?wk.stroke:'#4A7AAA';
+    emoji.innerHTML='<div style="width:64px;height:64px;border-radius:50%;background:'+wbg+';border:3px solid '+wst+';display:flex;align-items:center;justify-content:center;font-size:32px">👑</div>';
+    result.textContent=(heads?'Heads! ':'Tails! ')+winner+' goes first!';
     goBtn.style.display='inline-block';
   },1500);
 }  // end _goToCoinToss
 function coinDismiss(){
   document.getElementById('coin-modal').classList.remove('show');
+  hideSplashBg();
   _startGame(_pendingFt);
 }
 function toggleP2(isHuman){
@@ -1144,7 +1197,8 @@ var KINGDOMS=[
   {id:'john',   name:'King John the Benevolent', short:'King John',   queenName:'Queen Andrea',      bonus:'Starts with 3 gold coins',                   bg:'#A8C4E0',stroke:'#4A7AAA', privBg:'#D8E8F8',privBorder:'#4A7AAA'},
   {id:'adam',   name:'King Adam the Brave',       short:'King Adam',   queenName:'Queen Anastassiya', bonus:'Sword & Archer begin with an extra life',    bg:'#E0A8A8',stroke:'#AA4A4A', privBg:'#F8D8D8',privBorder:'#AA4A4A'},
   {id:'joshua', name:'King Joshua the Wise',      short:'King Joshua', queenName:'Queen Amy',         bonus:'Units rest only 2 turns on the bench',       bg:'#A8D4A8',stroke:'#3A8A4A', privBg:'#D4EED4',privBorder:'#3A8A4A'},
-  {id:'elijah', name:'King Elijah the Brutal',    short:'King Elijah', queenName:'Queen Kerylyn',     bonus:'Knight chooses roll, roll+1, or roll+2',     bg:'#C4A8D4',stroke:'#7A4A9A', privBg:'#E8D8F0',privBorder:'#7A4A9A'}
+  {id:'elijah', name:'King Elijah the Brutal',    short:'King Elijah', queenName:'Queen Kerylyn',     bonus:'Knight chooses roll, roll+1, or roll+2',     bg:'#C4A8D4',stroke:'#7A4A9A', privBg:'#E8D8F0',privBorder:'#7A4A9A'},
+  {id:'kasey',  name:'Queen Kasey the Belligerent', short:'Queen Kasey', queenName:'Queen Kasey',       bonus:'Queen captures friendly units for +1 coin', bg:'#C87830',stroke:'#8A4810', privBg:'#E8B870',privBorder:'#B06820'}
 ];
 var _p1K=null,_p2K=null,_pendingP2h=false,_pendingHard=false;
 
@@ -1275,15 +1329,26 @@ function applyKingdomBonuses(){
   });
 }
 function dismissSplash(){
+  // Hide the button but keep splash visible as background
+  var sb=document.getElementById('splash-btn'); sb.style.display='none';
+  document.getElementById('splash-modal').style.zIndex='50';
+  document.getElementById('mode-modal').classList.add('show');
+}
+function showSplashBg(){
   var el=document.getElementById('splash-modal');
-  el.style.transition='opacity 0.6s ease';
+  el.classList.add('show');
+  el.style.zIndex='50';
+  document.getElementById('splash-btn').style.display='none';
+}
+function hideSplashBg(){
+  var el=document.getElementById('splash-modal');
+  el.style.transition='opacity 0.5s ease';
   el.style.opacity='0';
   setTimeout(function(){
     el.classList.remove('show');
     el.style.opacity='';
     el.style.transition='';
-    document.getElementById('mode-modal').classList.add('show');
-  },650);
+  },520);
 }
 var HARDWIN_MSGS=[
   function(w){return 'BY THE HEAVENS ABOVE! '+w+' has achieved what no mortal soul dared dream possible! Outnumbered, outmatched, and fighting with one hand tied behind his back, this magnificent king has crushed all opposition and secured eternal glory! VALDENMOOR WILL NEVER FORGET THIS DAY!';},
@@ -1300,6 +1365,32 @@ function showHardWin(winPid){
 function dismissHardWin(){
   document.getElementById('hardwin-modal').classList.remove('show');
   if(_pendingStats!==null){showStatsScreen(_pendingStats);_pendingStats=null;}
+}
+var _mapCallback=null;
+function showMapSelect(onDone){
+  _mapCallback=onDone;
+  document.getElementById('map-modal').classList.add('show');
+}
+var _selectedMapId='tkr';
+function selectMap(mapId){
+  _selectedMapId=mapId||'tkr';
+  loadMap(_selectedMapId);
+  document.getElementById('map-modal').classList.remove('show');
+  if(_mapCallback){var cb=_mapCallback;_mapCallback=null;cb();}
+}
+function loadMap(mapId){
+  _currentMap=MAPS.find(function(m){return m.id===mapId;})||MAPS[0];
+  SP1=_currentMap.SP1; DP1=_currentMap.DP1;
+  SP2=_currentMap.SP2; DP2=_currentMap.DP2;
+  PRV1=_currentMap.PRV1; PRV2=_currentMap.PRV2;
+  CAS=_currentMap.CAS; RRL=_currentMap.RRL; COI=_currentMap.COI;
+  ACT=_currentMap.ACT;
+  D1=bfsD(DP1); D2=bfsD(DP2);
+  for(var i=0;i<ROWS*COLS;i++) CT[i]='blank';
+  ACT.forEach(function(i){CT[i]='sh';});
+  PRV1.forEach(function(i){CT[i]='p1';}); PRV2.forEach(function(i){CT[i]='p2';});
+  CAS.forEach(function(i){CT[i]='ca';}); RRL.forEach(function(i){CT[i]='rr';}); COI.forEach(function(i){CT[i]='co';});
+  CT[SP1]='p1'; CT[DP1]='d1'; CT[SP2]='p2'; CT[DP2]='d2';
 }
 function p2lbl(){return G&&G.p2human?'P2':'CPU';}
 function p1lbl(){return 'P1';}
@@ -1441,6 +1532,20 @@ function applyMove(pid,tok,dest){
 
   tok.cell=dest;
   tok.st.moves++;
+  // Kasey's queen: capture friendly unit at dest
+  if(tok.t==='queen'&&(pid===0?G.p1KingId:G.p2KingId)==='kasey'){
+    var fr2=G.pl[pid].bench.filter(t=>!t.done&&t.id!==tok.id&&t.cell===dest);
+    if(fr2.length>0){
+      var ftarget=fr2[0];
+      bench(pid,ftarget,true);
+      G.pl[pid].coins+=1;
+      tok.st.kills++;
+      SFX.capture();
+      var fdead=ftarget.lives!==null&&ftarget.lives<=0;
+      msg='Queen Kasey captures '+ftarget.l+'! +2 coins'+(fdead?' (eliminated!)':'')+'.'
+      atk=true;
+    }
+  }
   if(tok.t==='merchant'){
     if(CAS.has(dest)){G.pl[pid].coins++;tok.st.coins++;SFX.coin();msg='Merchant at castle ('+CC[dest]+') — +1 gold! Treasury: '+G.pl[pid].coins;}
     else if(COI.has(dest)){G.pl[pid].coins+=2;tok.st.coins+=2;SFX.coin();msg='Merchant at gold coin ('+CC[dest]+') — +2 gold! Treasury: '+G.pl[pid].coins;}
