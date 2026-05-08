@@ -268,7 +268,12 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
     <div style="margin:8px 0"></div>
     <button class="map-btn" onclick="selectMap('map3')">
       <div class="map-icon">🗺</div>
-      <div><div class="map-name">Map3</div><div class="map-desc">Small, narrow map. Royals have a short path to victory. Archers can rain death on adjacent private squares!</div></div>
+      <div><div class="map-name">The Narrow Pass</div><div class="map-desc">Small, narrow map. Royals have a short path to victory. Archers can rain death on adjacent private squares!</div></div>
+    </button>
+    <div style="margin:8px 0"></div>
+    <button class="map-btn" onclick="selectMap('map4')">
+      <div class="map-icon">🗺</div>
+      <div><div class="map-name">Thieve's Playground</div><div class="map-desc">Medium sized map that can play fast with generous roll-agains. Thief units will find plenty of cover where other units can't find them</div></div>
     </button>
   </div>
 </div>
@@ -304,6 +309,14 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
       <p>A record of updates and improvements to the realm</p>
     </div>
     <div id="changelog-scroll">
+
+      <div class="cl-version">
+        <div class="cl-vtag">v7.4</div>
+        <div class="cl-item">Map3 renamed to The Narrow Pass; Map4 added — Thieve's Playground, medium map with thief-only cover squares</div>
+        <div class="cl-item">Hero of the Convoy now shows kingdom name (e.g. "King John's Archer"); formula updated to subtract 2pts per death</div>
+        <div class="cl-item">💩 Dunce of the Realm award added — losing team's unit with fewest total moves</div>
+        <div class="cl-item">King Necmo the Swift added — 6th kingdom with 7-sided dice (0,1,1,2,2,3,4) and Queen Beyoncé</div>
+      </div>
 
       <div class="cl-version">
         <div class="cl-vtag">v7.3</div>
@@ -493,7 +506,7 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
       </div>
     </div>
     <div style="margin-top:8px;padding:6px 4px;text-align:center;border-top:1px solid #C4A050">
-      <a href="https://cuttshow.github.io/Instruction-book/" target="_blank" style="font-family:Georgia,serif;font-size:10px;color:#5C3D0A;text-decoration:none;font-style:italic;letter-spacing:0.5px">📜 Rules of Engagement</a><br style="margin:3px 0"><a href="https://cuttshow.github.io/Map-editor/" target="_blank" style="font-family:Georgia,serif;font-size:10px;color:#5C3D0A;text-decoration:none;font-style:italic;letter-spacing:0.5px">🗺 Map Editor</a><br style="margin:3px 0"><a href="#" onclick="document.getElementById('changelog-modal').classList.add('show');return false;" style="font-family:Georgia,serif;font-size:10px;color:#5C3D0A;text-decoration:none;font-style:italic;letter-spacing:0.5px">📋 Changelog</a><br><span style="font-family:Georgia,serif;font-size:8px;color:#A08040;display:block;margin-top:4px">Built May 07, 2026 09:49 PM PST</span>
+      <a href="https://cuttshow.github.io/Instruction-book/" target="_blank" style="font-family:Georgia,serif;font-size:10px;color:#5C3D0A;text-decoration:none;font-style:italic;letter-spacing:0.5px">📜 Rules of Engagement</a><br style="margin:3px 0"><a href="https://cuttshow.github.io/Map-editor/" target="_blank" style="font-family:Georgia,serif;font-size:10px;color:#5C3D0A;text-decoration:none;font-style:italic;letter-spacing:0.5px">🗺 Map Editor</a><br style="margin:3px 0"><a href="#" onclick="document.getElementById('changelog-modal').classList.add('show');return false;" style="font-family:Georgia,serif;font-size:10px;color:#5C3D0A;text-decoration:none;font-style:italic;letter-spacing:0.5px">📋 Changelog</a><br><span style="font-family:Georgia,serif;font-size:8px;color:#A08040;display:block;margin-top:4px">Built May 08, 2026 PDT</span>
     </div>
   </div>
   <div id="controls-row">
@@ -560,7 +573,7 @@ const MAPS=[
     ACT:new Set([ix(1,1),ix(2,1),ix(3,1),ix(4,1),ix(5,1),ix(3,2),ix(1,3),ix(2,3),ix(3,3),ix(1,4),ix(1,5),ix(2,5),ix(3,5),ix(4,5),ix(5,5),ix(3,6),ix(5,6),ix(3,7),ix(5,7),ix(1,8),ix(2,8),ix(3,8),ix(4,8),ix(5,8),ix(1,9),ix(3,9),ix(1,10),ix(3,10),ix(1,11),ix(2,11),ix(3,11),ix(4,11),ix(5,11),ix(5,12),ix(3,13),ix(4,13),ix(5,13),ix(3,14),ix(1,15),ix(2,15),ix(3,15),ix(4,15),ix(5,15),ix(1,16),ix(5,16)])
   },
   {
-    id:'map3',name:'Map3',desc:'Small, narrow map. Royals have a short path to victory. Archers can rain death on adjacent private squares!',
+    id:'map3',name:'The Narrow Pass',desc:'Small, narrow map. Royals have a short path to victory. Archers can rain death on adjacent private squares!',
     SP1:ix(3,1),DP1:ix(2,13),SP2:ix(4,2),DP2:ix(3,14),
     PRV1:new Set([ix(3,1),ix(3,2),ix(3,3),ix(3,4),ix(2,10),ix(2,11),ix(2,12),ix(2,13)]),
     PRV2:new Set([ix(4,2),ix(4,3),ix(4,4),ix(4,5),ix(3,11),ix(3,12),ix(3,13),ix(3,14)]),
@@ -569,6 +582,17 @@ const MAPS=[
     COI:new Set([ix(4,7)]),
     BHO:null,
     ACT:new Set([ix(3,1),ix(3,2),ix(4,2),ix(3,3),ix(4,3),ix(3,4),ix(4,4),ix(3,5),ix(4,5),ix(3,6),ix(2,7),ix(3,7),ix(4,7),ix(3,8),ix(3,9),ix(2,10),ix(3,10),ix(2,11),ix(3,11),ix(2,12),ix(3,12),ix(2,13),ix(3,13),ix(3,14)])
+  },
+  {
+    id:'map4',name:"Thieve's Playground",desc:"Medium sized map that can play fast with generous roll-agains. Thief units will find plenty of cover where other units can't find them",
+    SP1:ix(1,1),DP1:ix(1,13),SP2:ix(5,1),DP2:ix(5,13),
+    PRV1:new Set([ix(1,1),ix(1,2),ix(1,7),ix(1,12),ix(1,13)]),
+    PRV2:new Set([ix(5,1),ix(5,2),ix(5,8),ix(5,12),ix(5,13)]),
+    CAS:new Set([ix(1,5),ix(5,5),ix(1,10),ix(5,10)]),
+    RRL:new Set([ix(5,3),ix(1,4),ix(3,6),ix(3,9)]),
+    COI:new Set([ix(3,3)]),
+    BHO:null,
+    ACT:new Set([ix(1,1),ix(5,1),ix(1,2),ix(5,2),ix(1,3),ix(3,3),ix(5,3),ix(1,4),ix(3,4),ix(5,4),ix(1,5),ix(2,5),ix(3,5),ix(4,5),ix(5,5),ix(3,6),ix(1,7),ix(2,7),ix(3,7),ix(4,7),ix(2,8),ix(4,8),ix(5,8),ix(2,9),ix(3,9),ix(4,9),ix(1,10),ix(3,10),ix(5,10),ix(1,11),ix(2,11),ix(3,11),ix(4,11),ix(5,11),ix(1,12),ix(5,12),ix(1,13),ix(5,13)])
   }
 ];
 // Build TKR ACT (all 80 squares active)
@@ -631,8 +655,14 @@ const UNITS=[
 ];
 
 const DF=[0,1,1,2,2,3];
+const DF_NECMO=[0,1,1,2,2,3,4];
 let G={}, histOpen=false;
-const rdie=()=>DF[Math.floor(Math.random()*6)];
+const rdie=function(){return DF[Math.floor(Math.random()*6)];};
+const rdie_necmo=function(){return DF_NECMO[Math.floor(Math.random()*7)];};
+function rdieForPid(pid){
+  var kid=pid===0?G.p1KingId:G.p2KingId;
+  return kid==='necmo'?rdie_necmo():rdie();
+}
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 
 
@@ -1376,7 +1406,8 @@ var KINGDOMS=[
   {id:'adam',   name:'King Adam the Brave',       short:'King Adam',   queenName:'Queen Anastassiya', bonus:'Sword & Archer begin with an extra life',    bg:'#E0A8A8',stroke:'#AA4A4A', privBg:'#F8D8D8',privBorder:'#AA4A4A'},
   {id:'joshua', name:'King Joshua the Wise',      short:'King Joshua', queenName:'Queen Amy',         bonus:'Units rest only 2 turns on the bench',       bg:'#A8D4A8',stroke:'#3A8A4A', privBg:'#D4EED4',privBorder:'#3A8A4A'},
   {id:'elijah', name:'King Elijah the Brutal',    short:'King Elijah', queenName:'Queen Kerylyn',     bonus:'Knight chooses roll, roll+1, or roll+2',     bg:'#C4A8D4',stroke:'#7A4A9A', privBg:'#E8D8F0',privBorder:'#7A4A9A'},
-  {id:'kasey',  name:'Queen Kasey the Belligerent', short:'Queen Kasey', queenName:'Queen Kasey', kingName:'King Doug', bonus:'Queen captures friendly units for +1 coin', bg:'#C87830',stroke:'#8A4810', privBg:'#E8B870',privBorder:'#B06820'}
+  {id:'kasey',  name:'Queen Kasey the Belligerent', short:'Queen Kasey', queenName:'Queen Kasey', kingName:'King Doug', bonus:'Queen captures friendly units for +1 coin', bg:'#C87830',stroke:'#8A4810', privBg:'#E8B870',privBorder:'#B06820'},
+  {id:'necmo',  name:'King Necmo the Swift',        short:'King Necmo',  queenName:'Queen Beyoncé',                    bonus:'Rolls 7-sided dice — chance at rolls of 4', bg:'#8B5E3C',stroke:'#5C3A20', privBg:'#D4A574',privBorder:'#A0724A'}
 ];
 var _p1K=null,_p2K=null,_pendingP2h=false,_pendingHard=false;
 
@@ -1988,8 +2019,9 @@ function showCpuKingSelect(onDone){
 function p2lbl(){return G&&G.p2human?'P2':'CPU';}
 function p1lbl(){return 'P1';}
 function doRoll(){
-  if(G.ift){const d=rdie();return{d1:d,d2:null,total:d};}
-  const a=rdie(),b=rdie();return{d1:a,d2:b,total:a+b};
+  var pid=G.turn===0?0:1;
+  if(G.ift){var d=rdieForPid(pid);return{d1:d,d2:null,total:d};}
+  var a=rdieForPid(pid),b=rdieForPid(pid);return{d1:a,d2:b,total:a+b};
 }
 
 function roll(){
@@ -2720,19 +2752,36 @@ function showStatsScreen(pid){
   // Hero of the Convoy
   var winPid=won?0:1;
   var candidates=G.pl[winPid].bench.filter(function(t){return !ROY.has(t.t);});
-  var heroScore=function(t){return t.st.kills+t.st.coins+t.st.castles+(t.st.finishes*3);};
+  var heroScore=function(t){return t.st.kills+t.st.coins+t.st.castles+(t.st.finishes*3)-(t.st.deaths*2);};
   var maxScore=Math.max.apply(null,candidates.map(heroScore));
   var tied=candidates.filter(function(t){return heroScore(t)===maxScore;});
   var hero=tied[Math.floor(Math.random()*tied.length)];
   var EMOJIS2={knight:'🐴',shield:'🛡️',siege:'⚙️',thief:'🗡️',archer:'🏹',merchant:'🤠',sword:'⚔️',soldier:'🚶'};
   var heroEmoji=EMOJIS2[hero.t]||'⚔️';
   var isDead=hero.lives!==null&&hero.lives<=0;
+  var winKing=winPid===0?_p1K:_p2K;
+  var kingPrefix=winKing?winKing.short+'\'s ':'';
   h+='<div id="hero-section"><h3>🏆 HERO OF THE CONVOY 🏆</h3>';
-  h+='<div id="hero-name">'+heroEmoji+' '+hero.l+'</div>';
-  h+='<div id="hero-score">Score: '+maxScore+' &nbsp;('+hero.st.kills+' kills · '+hero.st.coins+' coins · '+hero.st.castles+' castles · '+hero.st.finishes+' finishes)</div>';
+  h+='<div id="hero-name">'+heroEmoji+' '+kingPrefix+hero.l+'</div>';
+  h+='<div id="hero-score">Score: '+maxScore+' &nbsp;('+hero.st.kills+' kills · '+hero.st.coins+' coins · '+hero.st.castles+' castles · '+hero.st.finishes+' finishes · '+hero.st.deaths+' deaths)</div>';
   if(isDead) h+='<div id="hero-posthumous">★ Awarded Posthumously ★</div>';
   h+='</div>';
   h+=tbl(won?1:0,won?(_p2K?_p2K.short:'⚜ Enemy'):(_p1K?_p1K.short:'⚜ Player'),'cpu-head');
+  // Dunce of the Realm
+  var losePid=won?1:0;
+  var losers=G.pl[losePid].bench.filter(function(t){return !ROY.has(t.t);});
+  if(losers.length>0){
+    var minMoves=Math.min.apply(null,losers.map(function(t){return t.st.moves;}));
+    var duncePool=losers.filter(function(t){return t.st.moves===minMoves;});
+    var dunce=duncePool[Math.floor(Math.random()*duncePool.length)];
+    var dunceEmoji=EMOJIS2[dunce.t]||'⚔️';
+    var loseKing=losePid===0?_p1K:_p2K;
+    var duncePrefix=loseKing?loseKing.short+'\'s ':'';
+    h+='<div id="hero-section" style="margin-top:10px"><h3>💩 DUNCE OF THE REALM 💩</h3>';
+    h+='<div id="hero-name">'+dunceEmoji+' '+duncePrefix+dunce.l+'</div>';
+    h+='<div id="hero-score">'+dunce.st.moves+' total moves</div>';
+    h+='</div>';
+  }
   h+='<button class="ss-btn" onclick="closeStats()">Play Again</button>';
   el.innerHTML=h;
   el.style.display='block';
