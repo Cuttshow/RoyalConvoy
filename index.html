@@ -201,6 +201,7 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
 .king-btn.random-btn:hover{background:#EAD8B0}
 .map-icon{width:48px;height:36px;flex-shrink:0;border:1.5px solid #A07820;border-radius:3px;background:#D9C99A;display:flex;align-items:center;justify-content:center;font-size:20px}
 .map-name{font-family:Georgia,serif;font-size:13px;font-weight:700;color:#3A2808}
+.map-desc{font-family:Georgia,serif;font-size:10px;color:#8A6030;font-style:italic;margin-top:2px;line-height:1.4}
 #king-cpu-msg{font-family:Georgia,serif;font-size:13px;color:#5C3D0A;margin:8px 0 14px;min-height:18px;font-style:italic}
 #outcome-modal{display:none;position:fixed;inset:0;background:rgba(60,32,8,.82);z-index:203;align-items:center;justify-content:center}
 #outcome-modal.show{display:flex}
@@ -209,6 +210,21 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
 #outcome-text{font-family:Georgia,serif;font-size:14px;color:#5C3D0A;line-height:1.7;margin-bottom:22px;font-style:italic}
 #outcome-go{padding:10px 28px;border-radius:6px;border:1.5px solid #A07820;background:#5C3D0A;color:#F5EDD6;font-size:13px;font-weight:700;font-family:Georgia,serif;cursor:pointer;letter-spacing:.5px}
 #outcome-go:hover{background:#3A2808}
+#changelog-modal{display:none;position:fixed;inset:0;background:rgba(60,32,8,.82);z-index:203;align-items:center;justify-content:center}
+#changelog-modal.show{display:flex}
+#changelog-box{background:#F5EDD6;border:2px solid #A07820;border-radius:8px;padding:0;max-width:480px;width:94%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
+#changelog-header{padding:16px 20px 12px;border-bottom:1px solid #C4A050;flex-shrink:0}
+#changelog-header h2{font-family:Georgia,serif;font-size:14px;font-weight:700;color:#3A2808;letter-spacing:1px;margin-bottom:2px}
+#changelog-header p{font-family:Georgia,serif;font-size:10px;color:#8A6030;font-style:italic}
+#changelog-scroll{overflow-y:auto;padding:14px 20px;flex:1}
+.cl-version{margin-bottom:16px}
+.cl-version:last-child{margin-bottom:0}
+.cl-vtag{font-family:Georgia,serif;font-size:12px;font-weight:700;color:#5C3D0A;border-bottom:1px solid #E0C870;padding-bottom:3px;margin-bottom:6px}
+.cl-item{font-family:Georgia,serif;font-size:11px;color:#3A2808;line-height:1.6;padding-left:12px;position:relative;margin-bottom:2px}
+.cl-item::before{content:'·';position:absolute;left:2px;color:#A07820}
+#changelog-footer{padding:12px 20px;border-top:1px solid #C4A050;flex-shrink:0;text-align:center}
+#changelog-close{padding:8px 24px;border-radius:6px;border:1.5px solid #A07820;background:#5C3D0A;color:#F5EDD6;font-size:12px;font-weight:700;font-family:Georgia,serif;cursor:pointer}
+#changelog-close:hover{background:#3A2808}
 #hardwin-modal{display:none;position:fixed;inset:0;background:#000;z-index:205;flex-direction:column}
 #hardwin-modal.show{display:flex}
 #hardwin-top{flex:1;position:relative;overflow:hidden}
@@ -242,12 +258,17 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
     <p>Select the map for this convoy</p>
     <button class="map-btn" onclick="selectMap('tkr')">
       <div class="map-icon">🗺</div>
-      <div><div class="map-name">The King's Road</div></div>
+      <div><div class="map-name">The King's Road</div><div class="map-desc">Balanced map. Great for new players to hone their skills. Siege units will prove essential!</div></div>
     </button>
     <div style="margin:8px 0"></div>
     <button class="map-btn" onclick="selectMap('map2')">
       <div class="map-icon">🗺</div>
-      <div><div class="map-name">The Contested Crossing</div></div>
+      <div><div class="map-name">The Contested Crossing</div><div class="map-desc">Harrowing entrance will beget plenty of bloodshed. Private squares allow for shortcuts through a winding map. Beware of the bandits!</div></div>
+    </button>
+    <div style="margin:8px 0"></div>
+    <button class="map-btn" onclick="selectMap('map3')">
+      <div class="map-icon">🗺</div>
+      <div><div class="map-name">Map3</div><div class="map-desc">Small, narrow map. Royals have a short path to victory. Archers can rain death on adjacent private squares!</div></div>
     </button>
   </div>
 </div>
@@ -274,6 +295,129 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
     <div id="hardwin-title">⚔ LEGENDARY VICTORY ⚔</div>
     <div id="hardwin-msg"></div>
     <button id="hardwin-go" onclick="dismissHardWin()">Claim Your Glory</button>
+  </div>
+</div>
+<div id="changelog-modal">
+  <div id="changelog-box">
+    <div id="changelog-header">
+      <h2>📋 ROYAL CONVOY — CHANGELOG</h2>
+      <p>A record of updates and improvements to the realm</p>
+    </div>
+    <div id="changelog-scroll">
+
+      <div class="cl-version">
+        <div class="cl-vtag">v7.3</div>
+        <div class="cl-item">Map3 added — small narrow map with offset start and finish squares</div>
+        <div class="cl-item">Map descriptions added to the map selection screen</div>
+        <div class="cl-item">CPU kingdom select screen — manually choose your opponent or pick Random</div>
+        <div class="cl-item">Random opponent bug fixed — CPU colours and name now display correctly</div>
+        <div class="cl-item">Build timestamp (PST) added to sidebar, updated each build</div>
+        <div class="cl-item">Changelog modal added to sidebar</div>
+      </div>
+
+      <div class="cl-version">
+        <div class="cl-vtag">v7.2</div>
+        <div class="cl-item">Bandit system added to The Contested Crossing — goblin spawns every 3 rounds</div>
+        <div class="cl-item">Bandit moves toward nearest unit via BFS, animates step by step with dice display</div>
+        <div class="cl-item">Bandit uses BAND: label in history; hideout destruction does not kill active bandit</div>
+        <div class="cl-item">Two playable maps: The King's Road and The Contested Crossing</div>
+        <div class="cl-item">Map selection screen added after kingdom select</div>
+        <div class="cl-item">Royal arrival audio — 4 clips shuffle each game, no repeats per game</div>
+        <div class="cl-item">Intro music plays on Begin Your Journey click</div>
+        <div class="cl-item">iOS audio unlock — SFX and music now work on iPad</div>
+        <div class="cl-item">Splash screen persists through entire setup flow until map is selected</div>
+        <div class="cl-item">New Game button returns to full splash screen</div>
+        <div class="cl-item">Between-square transit animation for all unit movement</div>
+      </div>
+
+      <div class="cl-version">
+        <div class="cl-vtag">v7.1</div>
+        <div class="cl-item">Board cells sized to viewport height — all 16 rows always visible</div>
+        <div class="cl-item">Cell aspect ratio locked at 1.8:1 — no more wide rectangles on large screens</div>
+        <div class="cl-item">Column and row headers removed; coordinate labels inside cells retained</div>
+        <div class="cl-item">History bar and ribbon capped to board width</div>
+        <div class="cl-item">Sidebar sits flush against board with no gap</div>
+        <div class="cl-item">Rules of Engagement and Map Editor links added to sidebar</div>
+        <div class="cl-item">Hard mode victory — special celebration popup with splash image</div>
+        <div class="cl-item">Destination squares always highlight blue, including private squares</div>
+        <div class="cl-item">Hero of the Convoy award added to stats screen</div>
+      </div>
+
+      <div class="cl-version">
+        <div class="cl-vtag">v7.0</div>
+        <div class="cl-item">Splash screen added — Royal Convoy artwork shown on game load</div>
+        <div class="cl-item">Coin toss shows winning kingdom's coloured circle with crown</div>
+      </div>
+
+      <div class="cl-version">
+        <div class="cl-vtag">v6.9</div>
+        <div class="cl-item">Kingdom bonuses now active in gameplay</div>
+        <div class="cl-item">King John: starts with 3 gold coins</div>
+        <div class="cl-item">King Adam: Sword and Archer begin with an extra life</div>
+        <div class="cl-item">King Joshua: units rest only 2 turns on the bench</div>
+        <div class="cl-item">King Elijah: Knight may choose roll, roll+1, or roll+2 movement</div>
+        <div class="cl-item">Queen Kasey the Belligerent added as 5th kingdom (orange)</div>
+        <div class="cl-item">Kasey's Queen can capture friendly units for +1 coin</div>
+        <div class="cl-item">King Doug named as Kasey's consort</div>
+      </div>
+
+      <div class="cl-version">
+        <div class="cl-vtag">v6.8</div>
+        <div class="cl-item">Private square colours match chosen kingdom (blue, red, green, purple, orange)</div>
+        <div class="cl-item">Roll-again squares match surrounding square colour; dice icon retained</div>
+        <div class="cl-item">Finish squares use kingdom private colour</div>
+      </div>
+
+      <div class="cl-version">
+        <div class="cl-vtag">v6.7</div>
+        <div class="cl-item">Map editor tool released</div>
+        <div class="cl-item">Four playable kingdoms: John, Adam, Joshua, Elijah</div>
+        <div class="cl-item">Kingdom select screen appears after mode select</div>
+        <div class="cl-item">CPU picks randomly from remaining kingdoms with reveal animation</div>
+        <div class="cl-item">Token colours and bench headers update to match chosen kingdom</div>
+        <div class="cl-item">Coin toss result text shows full king name and title</div>
+      </div>
+
+      <div class="cl-version">
+        <div class="cl-vtag">v6.6</div>
+        <div class="cl-item">PvP fix — P2 can now spend coins on their turn</div>
+        <div class="cl-item">PvP fix — P2 units clickable directly on board squares</div>
+        <div class="cl-item">CPU coin spend bug fixed — eliminated units no longer brought back</div>
+      </div>
+
+      <div class="cl-version">
+        <div class="cl-vtag">v6.5</div>
+        <div class="cl-item">Royal arrival popup shown when any King or Queen reaches the tourney</div>
+        <div class="cl-item">Queen names added to each kingdom</div>
+        <div class="cl-item">End-of-game outcome popup with randomly selected chronicle message</div>
+        <div class="cl-item">Any friendly unit can now land on a square with a friendly Merchant</div>
+      </div>
+
+      <div class="cl-version">
+        <div class="cl-vtag">v6.3 – 6.4</div>
+        <div class="cl-item">Stats screen added — per-unit breakdown of kills, coins, castles, finishes</div>
+        <div class="cl-item">Crown emoji added to kingdom select swatches</div>
+        <div class="cl-item">Various PvP coin spend and board interaction fixes</div>
+      </div>
+
+      <div class="cl-version">
+        <div class="cl-vtag">v6.2</div>
+        <div class="cl-item">Kingdom select screen added to game flow</div>
+        <div class="cl-item">Five kingdoms with unique colours and token styling</div>
+        <div class="cl-item">All unit token backgrounds update to chosen kingdom colour</div>
+      </div>
+
+      <div class="cl-version">
+        <div class="cl-vtag">v6.1</div>
+        <div class="cl-item">Player vs CPU (Hard) mode added</div>
+        <div class="cl-item">Hard mode: P1's eliminatable units start with 1 life instead of 2</div>
+        <div class="cl-item">CPU retains standard 2 lives in Hard mode</div>
+      </div>
+
+        </div>
+    <div id="changelog-footer">
+      <button id="changelog-close" onclick="document.getElementById('changelog-modal').classList.remove('show')">Close</button>
+    </div>
   </div>
 </div>
 <div id="outcome-modal">
@@ -349,7 +493,7 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
       </div>
     </div>
     <div style="margin-top:8px;padding:6px 4px;text-align:center;border-top:1px solid #C4A050">
-      <a href="https://cuttshow.github.io/Instruction-book/" target="_blank" style="font-family:Georgia,serif;font-size:10px;color:#5C3D0A;text-decoration:none;font-style:italic;letter-spacing:0.5px">📜 Rules of Engagement</a><br style="margin:3px 0"><a href="https://cuttshow.github.io/Map-editor/" target="_blank" style="font-family:Georgia,serif;font-size:10px;color:#5C3D0A;text-decoration:none;font-style:italic;letter-spacing:0.5px">🗺 Map Editor</a>
+      <a href="https://cuttshow.github.io/Instruction-book/" target="_blank" style="font-family:Georgia,serif;font-size:10px;color:#5C3D0A;text-decoration:none;font-style:italic;letter-spacing:0.5px">📜 Rules of Engagement</a><br style="margin:3px 0"><a href="https://cuttshow.github.io/Map-editor/" target="_blank" style="font-family:Georgia,serif;font-size:10px;color:#5C3D0A;text-decoration:none;font-style:italic;letter-spacing:0.5px">🗺 Map Editor</a><br style="margin:3px 0"><a href="#" onclick="document.getElementById('changelog-modal').classList.add('show');return false;" style="font-family:Georgia,serif;font-size:10px;color:#5C3D0A;text-decoration:none;font-style:italic;letter-spacing:0.5px">📋 Changelog</a><br><span style="font-family:Georgia,serif;font-size:8px;color:#A08040;display:block;margin-top:4px">Built May 07, 2026 09:49 PM PST</span>
     </div>
   </div>
   <div id="controls-row">
@@ -394,7 +538,7 @@ const COLS=5,ROWS=16;
 const ix=(c,r)=>(r-1)*5+(c-1);
 const MAPS=[
   {
-    id:'tkr',name:"The King's Road",
+    id:'tkr',name:"The King's Road",desc:'Balanced map. Great for new players to hone their skills. Siege units will prove essential!',
     SP1:ix(1,1),DP1:ix(1,16),SP2:ix(5,1),DP2:ix(5,16),
     PRV1:new Set([ix(1,1),ix(1,2),ix(1,3),ix(1,4),ix(1,14),ix(1,15),ix(1,16)]),
     PRV2:new Set([ix(5,1),ix(5,2),ix(5,3),ix(5,4),ix(5,14),ix(5,15),ix(5,16)]),
@@ -405,7 +549,7 @@ const MAPS=[
     ACT:null
   },
   {
-    id:'map2',name:'The Contested Crossing',
+    id:'map2',name:'The Contested Crossing',desc:'Harrowing entrance to the map will beget plenty of bloodshed. Private squares allow for shortcuts through a winding map. Beware of the bandits!',
     SP1:ix(1,1),DP1:ix(1,16),SP2:ix(5,1),DP2:ix(5,16),
     PRV1:new Set([ix(1,1),ix(2,1),ix(3,6),ix(3,7),ix(1,15),ix(2,15),ix(1,16)]),
     PRV2:new Set([ix(4,1),ix(5,1),ix(3,9),ix(3,10),ix(4,15),ix(5,15),ix(5,16)]),
@@ -414,6 +558,17 @@ const MAPS=[
     COI:new Set([ix(5,6),ix(1,10)]),
     BHO:ix(3,13),
     ACT:new Set([ix(1,1),ix(2,1),ix(3,1),ix(4,1),ix(5,1),ix(3,2),ix(1,3),ix(2,3),ix(3,3),ix(1,4),ix(1,5),ix(2,5),ix(3,5),ix(4,5),ix(5,5),ix(3,6),ix(5,6),ix(3,7),ix(5,7),ix(1,8),ix(2,8),ix(3,8),ix(4,8),ix(5,8),ix(1,9),ix(3,9),ix(1,10),ix(3,10),ix(1,11),ix(2,11),ix(3,11),ix(4,11),ix(5,11),ix(5,12),ix(3,13),ix(4,13),ix(5,13),ix(3,14),ix(1,15),ix(2,15),ix(3,15),ix(4,15),ix(5,15),ix(1,16),ix(5,16)])
+  },
+  {
+    id:'map3',name:'Map3',desc:'Small, narrow map. Royals have a short path to victory. Archers can rain death on adjacent private squares!',
+    SP1:ix(3,1),DP1:ix(2,13),SP2:ix(4,2),DP2:ix(3,14),
+    PRV1:new Set([ix(3,1),ix(3,2),ix(3,3),ix(3,4),ix(2,10),ix(2,11),ix(2,12),ix(2,13)]),
+    PRV2:new Set([ix(4,2),ix(4,3),ix(4,4),ix(4,5),ix(3,11),ix(3,12),ix(3,13),ix(3,14)]),
+    CAS:new Set([ix(2,7)]),
+    RRL:new Set([ix(3,7)]),
+    COI:new Set([ix(4,7)]),
+    BHO:null,
+    ACT:new Set([ix(3,1),ix(3,2),ix(4,2),ix(3,3),ix(4,3),ix(3,4),ix(4,4),ix(3,5),ix(4,5),ix(3,6),ix(2,7),ix(3,7),ix(4,7),ix(3,8),ix(3,9),ix(2,10),ix(3,10),ix(2,11),ix(3,11),ix(2,12),ix(3,12),ix(2,13),ix(3,13),ix(3,14)])
   }
 ];
 // Build TKR ACT (all 80 squares active)
@@ -1825,7 +1980,7 @@ function showCpuKingSelect(onDone){
   rb.innerHTML='🎲 Random Opponent';
   rb.onclick=function(){
     modal.classList.remove('show');
-    cpuPickKing(onDone);
+    cpuPickKing(function(pick){_p2K=pick;onDone();});
   };
   btns.appendChild(rb);
   modal.classList.add('show');
