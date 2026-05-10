@@ -144,9 +144,12 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
 .cpub{display:inline-block;font-size:7px;background:#F0C8C8;color:#7A2A2A;border:1px solid #AA4A4A;border-radius:3px;padding:1px 3px;margin-left:2px;vertical-align:middle;font-family:sans-serif}
 #mode-modal{display:none;position:fixed;inset:0;background:rgba(60,32,8,.75);z-index:200;align-items:center;justify-content:center}
 #mode-modal.show{display:flex}
-#mode-box{background:#F5EDD6;border:2px solid #A07820;border-radius:8px;padding:28px 32px;text-align:center;max-width:320px;width:90%}
-#mode-box h2{font-family:Georgia,serif;font-size:16px;font-weight:700;color:#3A2808;margin-bottom:6px;letter-spacing:1px}
-#mode-box p{font-family:Georgia,serif;font-size:12px;color:#8A6030;margin-bottom:20px}
+#mode-box{background:#F5EDD6;border:2px solid #A07820;border-radius:8px;padding:36px 40px;text-align:center;max-width:440px;width:92%}
+#mode-box h2{font-family:Georgia,serif;font-size:20px;font-weight:700;color:#3A2808;margin-bottom:12px;letter-spacing:1px}
+#mode-box .mode-intro{font-family:Georgia,serif;font-size:13px;color:#5C3D0A;margin-bottom:12px;line-height:1.6;text-align:center}
+#mode-box .mode-rules-link{display:block;font-family:Georgia,serif;font-size:12px;color:#7A4010;text-decoration:none;font-style:italic;margin-bottom:22px;letter-spacing:0.3px}
+#mode-box .mode-rules-link:hover{text-decoration:underline}
+#mode-box p{font-family:Georgia,serif;font-size:13px;color:#8A6030;margin-bottom:16px;font-weight:700;letter-spacing:0.5px}
 .mode-btn{display:block;width:100%;padding:11px;margin-bottom:10px;border-radius:6px;border:1.5px solid #A07820;background:#F5EDD6;color:#5C3D0A;font-size:13px;font-weight:700;font-family:Georgia,serif;cursor:pointer;letter-spacing:.5px}
 .mode-btn:hover{background:#EAD8B0}
 .mode-btn:last-child{margin-bottom:0}
@@ -316,6 +319,8 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
         <div class="cl-item">Hero of the Convoy now shows kingdom name (e.g. "King John's Archer"); formula updated to subtract 2pts per death</div>
         <div class="cl-item">💩 Dunce of the Realm award added — losing team's unit with fewest total moves</div>
         <div class="cl-item">King Necmo the Swift added — 6th kingdom with 7-sided dice (0,1,1,2,2,3,4) and Queen Beyoncé</div>
+        <div class="cl-item">King Aaron the Fierce added — 7th kingdom; sword instantly eliminates captured units</div>
+        <div class="cl-item">+1 Life bonus tiles added — one-time tiles that grant a unit type an extra life; can resurrect eliminated units</div>
       </div>
 
       <div class="cl-version">
@@ -455,11 +460,13 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
 </div>
 <div id="mode-modal">
   <div id="mode-box">
-    <h2>⚔ ROYAL CONVOY ⚔</h2>
+    <h2>Welcome to Royal Convoy!</h2>
+    <div class="mode-intro">Race your King and Queen across a treacherous kingdom board, spending gold, battling rivals, and outwitting your opponent to reach the Royal Tourney first. Protect your Royals, command your convoy, and claim glory for your kingdom.</div>
+    <a class="mode-rules-link" href="https://cuttshow.github.io/Instruction-book/" target="_blank">📜 Read the Full Rules</a>
     <p>Select Game Mode</p>
-    <button class="mode-btn" onclick="startGame(false,false)">⚔ Player vs CPU</button>
-    <button class="mode-btn" onclick="startGame(true,false)">👥 Player vs Player</button>
-    <button class="mode-btn" onclick="startGame(false,true)" style="background:#EAD0C0;border-color:#8A4020">💀 Player vs CPU (Hard)</button>
+    <button class="mode-btn" onclick="startGame(false,false)">⚔ Player vs CPU — Normal Difficulty</button>
+    <button class="mode-btn" onclick="startGame(false,true)" style="background:#EAD0C0;border-color:#8A4020">💀 Player vs CPU — Medieval Difficulty!</button>
+    <button class="mode-btn" onclick="startGame(true,false)">👥 Player vs Player — Pass and Play</button>
   </div>
 </div>
 <div id="gold-flash">✦ CPU spends gold to move! ✦</div>
@@ -492,8 +499,8 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
     </div>
     <div class="leg">
       <h4>LEGEND</h4>
-      <div class="li"><div class="ld" style="background:#D8E8F8;border:1.5px solid #4A7AAA"></div>P1 private</div>
-      <div class="li"><div class="ld" style="background:#F8D8D8;border:1.5px solid #AA4A4A"></div>Enemy private</div>
+      <div class="li"><div class="ld" id="leg-priv1" style="background:#D8E8F8;border:1.5px solid #4A7AAA"></div><span id="leg-priv1-lbl">P1 private</span></div>
+      <div class="li"><div class="ld" id="leg-priv2" style="background:#F8D8D8;border:1.5px solid #AA4A4A"></div><span id="leg-priv2-lbl">Enemy private</span></div>
       <div class="li"><div class="ld" style="background:#E8EDD8;border:1.5px solid #6A8A2A"></div>Roll again 🎲</div>
       <div class="li"><div class="ld" style="background:#E0DDD8;border:1.5px solid #A0A098"></div>Castle 🏰</div>
       <div class="li"><div class="ld" style="background:#F0DDA8;border:1.5px solid #C4A030"></div>Gold coin 💰</div>
@@ -559,6 +566,7 @@ const MAPS=[
     RRL:new Set([ix(1,3),ix(5,3),ix(3,8)]),
     COI:new Set([ix(2,8),ix(3,13)]),
     BHO:null,
+    BLT:[{cell:ix(5,11),unit:'archer'}],
     ACT:null
   },
   {
@@ -570,6 +578,7 @@ const MAPS=[
     RRL:new Set([ix(3,3),ix(5,7),ix(1,9),ix(5,12)]),
     COI:new Set([ix(5,6),ix(1,10)]),
     BHO:ix(3,13),
+    BLT:[{cell:ix(4,11),unit:'sword'}],
     ACT:new Set([ix(1,1),ix(2,1),ix(3,1),ix(4,1),ix(5,1),ix(3,2),ix(1,3),ix(2,3),ix(3,3),ix(1,4),ix(1,5),ix(2,5),ix(3,5),ix(4,5),ix(5,5),ix(3,6),ix(5,6),ix(3,7),ix(5,7),ix(1,8),ix(2,8),ix(3,8),ix(4,8),ix(5,8),ix(1,9),ix(3,9),ix(1,10),ix(3,10),ix(1,11),ix(2,11),ix(3,11),ix(4,11),ix(5,11),ix(5,12),ix(3,13),ix(4,13),ix(5,13),ix(3,14),ix(1,15),ix(2,15),ix(3,15),ix(4,15),ix(5,15),ix(1,16),ix(5,16)])
   },
   {
@@ -592,6 +601,7 @@ const MAPS=[
     RRL:new Set([ix(5,3),ix(1,4),ix(3,6),ix(3,9)]),
     COI:new Set([ix(3,3)]),
     BHO:null,
+    BLT:[{cell:ix(1,7),unit:'thief'},{cell:ix(5,8),unit:'thief'}],
     ACT:new Set([ix(1,1),ix(5,1),ix(1,2),ix(5,2),ix(1,3),ix(3,3),ix(5,3),ix(1,4),ix(3,4),ix(5,4),ix(1,5),ix(2,5),ix(3,5),ix(4,5),ix(5,5),ix(3,6),ix(1,7),ix(2,7),ix(3,7),ix(4,7),ix(2,8),ix(4,8),ix(5,8),ix(2,9),ix(3,9),ix(4,9),ix(1,10),ix(3,10),ix(5,10),ix(1,11),ix(2,11),ix(3,11),ix(4,11),ix(5,11),ix(1,12),ix(5,12),ix(1,13),ix(5,13)])
   }
 ];
@@ -1179,6 +1189,15 @@ function render(){
   if(h1) h1.textContent=_p1K?_p1K.short:'⚜ Player';
   var h2=document.getElementById('p2-king-name');
   if(h2) h2.textContent=_p2K?_p2K.short:(G&&G.p2human?'⚜ Player 2':'⚜ CPU');
+  // Update legend private square colors to match active kingdoms
+  var legP1=document.getElementById('leg-priv1');
+  var legP2=document.getElementById('leg-priv2');
+  var legP1Lbl=document.getElementById('leg-priv1-lbl');
+  var legP2Lbl=document.getElementById('leg-priv2-lbl');
+  if(legP1){legP1.style.background=p1k.privBg;legP1.style.borderColor=p1k.privBorder;}
+  if(legP2){legP2.style.background=p2k.privBg;legP2.style.borderColor=p2k.privBorder;}
+  if(legP1Lbl) legP1Lbl.textContent=(_p1K?_p1K.short:'P1')+' private';
+  if(legP2Lbl) legP2Lbl.textContent=(_p2K?_p2K.short:(G&&G.p2human?'P2':'Enemy'))+' private';
   
   
   document.getElementById('co1').textContent=G.pl[0].coins;
@@ -1268,6 +1287,21 @@ function rBoard(){
       else if(ct==='rr')s.textContent='🎲';
       div.appendChild(s);
       if(CC[i]){const n=document.createElement('span');n.className='cell-lbl';n.textContent=CC[i];div.appendChild(n);}
+    }
+    // BLT overlay — rendered on top of whatever square type exists
+    var bltEntry=G_BLT_ACTIVE.find(function(b){return b.cell===i;});
+    if(bltEntry){
+      var bltS=document.createElement('span');
+      bltS.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);line-height:1;pointer-events:none;user-select:none;display:flex;align-items:center;gap:1px;white-space:nowrap;';
+      var emojiSpan=document.createElement('span');
+      emojiSpan.style.cssText='font-size:14px;';
+      emojiSpan.textContent=UNIT_EMOJIS[bltEntry.unit];
+      var plusSpan=document.createElement('span');
+      plusSpan.style.cssText='font-size:15px;font-weight:bold;font-family:Georgia,serif;';
+      plusSpan.textContent='+1';
+      bltS.appendChild(emojiSpan);
+      bltS.appendChild(plusSpan);
+      div.appendChild(bltS);
     }
     if(i===SP1){const n=document.createElement('span');n.className='cell-lbl';n.style.cssText='color:#4A6AA0;top:2px;bottom:auto';n.textContent='P1 Start';div.appendChild(n);}
     if(i===SP2){const n=document.createElement('span');n.className='cell-lbl';n.style.cssText='color:#A04A4A;top:2px;bottom:auto';n.textContent='CPU Start';div.appendChild(n);}
@@ -1406,8 +1440,9 @@ var KINGDOMS=[
   {id:'adam',   name:'King Adam the Brave',       short:'King Adam',   queenName:'Queen Anastassiya', bonus:'Sword & Archer begin with an extra life',    bg:'#E0A8A8',stroke:'#AA4A4A', privBg:'#F8D8D8',privBorder:'#AA4A4A'},
   {id:'joshua', name:'King Joshua the Wise',      short:'King Joshua', queenName:'Queen Amy',         bonus:'Units rest only 2 turns on the bench',       bg:'#A8D4A8',stroke:'#3A8A4A', privBg:'#D4EED4',privBorder:'#3A8A4A'},
   {id:'elijah', name:'King Elijah the Brutal',    short:'King Elijah', queenName:'Queen Kerylyn',     bonus:'Knight chooses roll, roll+1, or roll+2',     bg:'#C4A8D4',stroke:'#7A4A9A', privBg:'#E8D8F0',privBorder:'#7A4A9A'},
-  {id:'kasey',  name:'Queen Kasey the Belligerent', short:'Queen Kasey', queenName:'Queen Kasey', kingName:'King Doug', bonus:'Queen captures friendly units for +1 coin', bg:'#C87830',stroke:'#8A4810', privBg:'#E8B870',privBorder:'#B06820'},
-  {id:'necmo',  name:'King Necmo the Swift',        short:'King Necmo',  queenName:'Queen Beyoncé',                    bonus:'Rolls 7-sided dice — chance at rolls of 4', bg:'#8B5E3C',stroke:'#5C3A20', privBg:'#D4A574',privBorder:'#A0724A'}
+  {id:'kasey',  name:'Queen Kasey the Belligerent', short:'Queen Kasey', queenName:'Queen Kasey', kingName:'King Doug', bonus:'Queen captures friendly units for +1 coin', bg:'#FF8C00',stroke:'#CC6600', privBg:'#E8B870',privBorder:'#B06820'},
+  {id:'necmo',  name:'King Grant the Swift',        short:'King Grant',  queenName:'Queen Laura',                      bonus:'Rolls 7-sided dice — chance at rolls of 4', bg:'#8B5E3C',stroke:'#5C3A20', privBg:'#D4A574',privBorder:'#A0724A'},
+  {id:'aaron',  name:'King Aaron the Fierce',       short:'King Aaron',  queenName:'Queen Maddie',                     bonus:"Sword eliminates captured units instantly",  bg:'#FFD700',stroke:'#CCA800', privBg:'#FFF5B0',privBorder:'#E0CC50'}
 ];
 var _p1K=null,_p2K=null,_pendingP2h=false,_pendingHard=false;
 
@@ -1599,17 +1634,22 @@ function loadMap(mapId){
   CAS=_currentMap.CAS; RRL=_currentMap.RRL; COI=_currentMap.COI;
   ACT=_currentMap.ACT;
   G_BHO=('BHO' in _currentMap)?_currentMap.BHO:null;
+  // Bonus life tiles
+  G_BLT_ACTIVE=(_currentMap.BLT||[]).map(function(b){return {cell:b.cell,unit:b.unit};});
   D1=bfsD(DP1); D2=bfsD(DP2);
   for(var i=0;i<ROWS*COLS;i++) CT[i]='blank';
   ACT.forEach(function(i){CT[i]='sh';});
   PRV1.forEach(function(i){CT[i]='p1';}); PRV2.forEach(function(i){CT[i]='p2';});
   CAS.forEach(function(i){CT[i]='ca';}); RRL.forEach(function(i){CT[i]='rr';}); COI.forEach(function(i){CT[i]='co';});
+  // BLT tiles do NOT override CT — they overlay on top of existing square type
   CT[SP1]='p1'; CT[DP1]='d1'; CT[SP2]='p2'; CT[DP2]='d2';
   // Rebuild coordinate labels for new map
   for(var cci=0;cci<ROWS*COLS;cci++) delete CC[cci];
   for(var ccr=1;ccr<=ROWS;ccr++) for(var ccc=1;ccc<=COLS;ccc++){var cci2=ix(ccc,ccr);if(ACT.has(cci2))CC[cci2]=COL_LETTERS[ccc-1].toUpperCase()+ccr;}
 }
 var G_BHO=null;
+var G_BLT_ACTIVE=[];
+var UNIT_EMOJIS={knight:'🐴',shield:'🛡️',siege:'⚙️',thief:'🗡️',archer:'🏹',merchant:'🤠',sword:'⚔️',soldier:'🚶',king:'👑',queen:'👸'};
 var G_BANDIT={cell:-1,roundsUntilSpawn:3,alive:false,destroyed:false};
 function hasBandits(){return G_BHO!==null&&(!G_BANDIT.destroyed||G_BANDIT.alive);}
 
@@ -2146,10 +2186,14 @@ function applyMove(pid,tok,dest){
         let tb=0;
         if(tok.t==='thief'&&G.pl[opp].coins>0){tb=Math.min(1,G.pl[opp].coins);G.pl[opp].coins-=tb;G.pl[pid].coins+=tb;}
         en.forEach(function(e){bench(opp,e,true);});
+        // Aaron's sword: instantly eliminate captured unit (not soldiers or royals)
+        var isAaronSword=tok.t==='sword'&&(pid===0?G.p1KingId:G.p2KingId)==='aaron';
+        if(isAaronSword&&!ROY.has(ot.t)&&ot.lives!==null){ot.lives=0;}
         tok.st.kills++;
         const livesLeft=ot.lives!==null?ot.lives:null;
-        const livesMsg=livesLeft!==null?(livesLeft>0?' ('+['','I','II','III'][livesLeft]+' life'+(livesLeft===1?' remains':' remain')+')':' (eliminated!)'):'';
-        msg=tok.l+' captures '+ot.l+' at '+CC[dest]+'!'+livesMsg+(s>0?' '+s+' royal gold seized!':'')+(tb>0?' +1 pilfered!':'');
+        const livesMsg=livesLeft!==null?(livesLeft>0?' ('+['','I','II','III'][Math.min(livesLeft,3)]+' life'+(livesLeft===1?' remains':' remain')+')':' (eliminated!)'):'';
+        const aaronMsg=isAaronSword&&!ROY.has(ot.t)&&ot.lives!==null?' ⚔ Fierce blow — eliminated!':'';
+        msg=tok.l+' captures '+ot.l+' at '+CC[dest]+'!'+(aaronMsg||livesMsg)+(s>0?' '+s+' royal gold seized!':'')+(tb>0?' +1 pilfered!':'');
         atk=true;
       }
     }
@@ -2184,6 +2228,31 @@ function applyMove(pid,tok,dest){
     else if(COI.has(dest)){G.pl[pid].coins+=2;tok.st.coins+=2;SFX.coin();msg='Merchant at gold coin ('+CC[dest]+') — +2 gold! Treasury: '+G.pl[pid].coins;}
     else if(!msg) msg='Merchant moves to '+CC[dest]+'.';
   } else if(COI.has(dest)){G.pl[pid].coins++;tok.st.coins++;SFX.coin();if(!msg)msg='Gold coin at '+CC[dest]+'! Treasury: '+G.pl[pid].coins;}
+
+  // Bonus Life Tile landing
+  var bltIdx=G_BLT_ACTIVE.findIndex(function(b){return b.cell===dest;});
+  if(bltIdx>=0){
+    var blt=G_BLT_ACTIVE[bltIdx];
+    var bonusTok=G.pl[pid].bench.find(function(t){return t.t===blt.unit;});
+    var bltUnitName=blt.unit.charAt(0).toUpperCase()+blt.unit.slice(1);
+    var winKingShort=(pid===0?_p1K:_p2K)?((pid===0?_p1K:_p2K).short):'';
+    if(bonusTok){
+      if(bonusTok.lives===null){
+        // soldier-type (infinite lives) — no effect but still consumed
+        var bltMsg=(winKingShort?winKingShort+"'s ":"")+tok.l+' claims the +1 '+bltUnitName+' bonus! ('+bltUnitName+' has infinite lives — no effect)';
+        addH(who,bltMsg);
+      } else {
+        var wasElim=bonusTok.lives<=0;
+        bonusTok.lives=Math.max(bonusTok.lives,0)+1;
+        if(wasElim){bonusTok.cell=-1;bonusTok.done=false;bonusTok.cd=0;}
+        var bltMsg2=(winKingShort?winKingShort+"'s ":"")+tok.l+' claims the +1 '+bltUnitName+' bonus! '+(wasElim?bltUnitName+' returns from the dead! (Lives: I)':bltUnitName+' gains a life! (Lives: '+['','I','II','III'][Math.min(bonusTok.lives,3)]+')');
+        if(!msg) msg=bltMsg2; else addH(who,bltMsg2);
+      }
+    }
+    // Remove tile from active list and CT
+    G_BLT_ACTIVE.splice(bltIdx,1);
+    render();
+  }
 
   if(fin){
     SFX.finish();
