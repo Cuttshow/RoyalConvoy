@@ -835,7 +835,7 @@ function canLand(pid,tok,dest){
 function eRoll(pid,tok,base){
   if(tok.t==='knight') return base+2;
   if(ROY.has(tok.t)){
-    // Prince Callen's units move without penalty
+    // Prince Kallen's units move without penalty
     var k=pid===0?_p1K:_p2K;
     if(k&&k.id==='callen') return base;
     return base-1;
@@ -1346,7 +1346,7 @@ var KINGDOMS=[
   {id:'kasey',  name:'Queen Kasey the Belligerent', short:'Queen Kasey', queenName:'Queen Kasey', kingName:'King Doug', bonus:'Queen captures friendly units for +1 coin', bg:'#FF8C00',stroke:'#CC6600', privBg:'#E8B870',privBorder:'#B06820'},
   {id:'necmo',  name:'King Grant the Swift',        short:'King Grant',  queenName:'Queen Laura',                      bonus:'Rolls 7-sided dice — chance at rolls of 4', bg:'#8B5E3C',stroke:'#5C3A20', privBg:'#D4A574',privBorder:'#A0724A'},
   {id:'aaron',  name:'King Aaron the Fierce',       short:'King Aaron',  queenName:'Queen Maddie',                     bonus:"Sword eliminates units regardless of lives remaining",  bg:'#FFD700',stroke:'#CCA800', privBg:'#FFF5B0',privBorder:'#E0CC50'},
-  {id:'callen', name:'Prince Callen the Mischievous', short:'Prince Callen', queenName:'Princess Peach', bonus:'Royal units move without penalty',   bg:'#B0D8D0',stroke:'#2A9A8A', privBg:'#D0E8E4',privBorder:'#2A9A8A'}
+  {id:'callen', name:'Prince Kallen the Mischievous', short:'Prince Kallen', queenName:'Princess Peach', bonus:'Royal units move without penalty',   bg:'#B0D8D0',stroke:'#2A9A8A', privBg:'#D0E8E4',privBorder:'#2A9A8A'}
 ];
 var _p1K=null,_p2K=null,_pendingP2h=false,_pendingHard=false;
 
