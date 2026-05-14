@@ -4,18 +4,40 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Royal Convoy</title>
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getDatabase, ref, set, get, onValue, off, update, remove } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
-<!-- Open Graph / Social Media & iMessage Preview -->
-<meta property="og:title" content="Royal Convoy">
-<meta property="og:description" content="Play Royal Convoy — a strategic board game of movement and tactics.">
-<meta property="og:image" content="https://github.com/Cuttshow/Splash/blob/main/IMG_3706.JPG?raw=true">
-<meta property="og:type" content="website">
+  // ═══════════════════════════════════════════
+  // FIREBASE CONFIG — Replace with your own from Firebase Console
+  // ═══════════════════════════════════════════
+  const firebaseConfig = {
+    apiKey: "AIzaSyBYFhYywXEuXM_69japA4oiYln24DWSwk8",
+    authDomain: "royalconvoy-5cd6f.firebaseapp.com",
+    databaseURL: "https://royalconvoy-5cd6f-default-rtdb.firebaseio.com",
+    projectId: "royalconvoy-5cd6f",
+    storageBucket: "royalconvoy-5cd6f.firebasestorage.app",
+    messagingSenderId: "196248925812",
+    appId: "1:196248925812:web:2a7b7b321b04c8467b0321",
+    measurementId: "G-CRXRMYYNPG"
+  };
 
-<!-- Twitter / X Card -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Royal Convoy">
-<meta name="twitter:description" content="Play Royal Convoy — a strategic board game of movement and tactics.">
-<meta name="twitter:image" content="https://github.com/Cuttshow/Splash/blob/main/IMG_3706.JPG?raw=true">
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // Expose to global scope for the rest of the game
+  window._fbDb = db;
+  window._fbRef = ref;
+  window._fbSet = set;
+  window._fbGet = get;
+  window._fbOnValue = onValue;
+  window._fbOff = off;
+  window._fbUpdate = update;
+  window._fbRemove = remove;
+  window._fbReady = true;
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Georgia,serif;background:#F2E6C8;touch-action:manipulation;display:flex;justify-content:center;align-items:flex-start;min-height:100vh}
@@ -335,6 +357,52 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
   <img id="splash-img" src="https://raw.githubusercontent.com/Cuttshow/Splash/refs/heads/main/IMG_3706.JPG" onload="this.classList.add('loaded')" alt="Royal Convoy"/>
   <button id="splash-btn">⚔ Begin Your Journey ⚔</button>
 </div>
+<style>
+/* ── Online Lobby Modal ── */
+#online-modal{display:none;position:fixed;inset:0;background:rgba(60,32,8,.82);z-index:180;align-items:center;justify-content:center}
+#online-modal.show{display:flex}
+#online-box{background:#F5EDD6;border:2px solid #A07820;border-radius:10px;padding:28px 32px;max-width:380px;width:94%;text-align:center;font-family:Georgia,serif}
+#online-box h2{font-size:16px;font-weight:700;color:#5C3D0A;letter-spacing:1.5px;margin-bottom:6px}
+#online-box p{font-size:12px;color:#8A6030;margin-bottom:18px}
+.ob-btn{display:block;width:100%;padding:11px 0;margin-bottom:10px;border-radius:6px;border:1.5px solid #A07820;background:#5C3D0A;color:#F5EDD6;font-size:13px;font-weight:700;font-family:Georgia,serif;cursor:pointer;letter-spacing:.5px}
+.ob-btn:hover{background:#3A2808}
+.ob-btn.sec{background:#F5EDD6;color:#5C3D0A}
+.ob-btn.sec:hover{background:#EAD8B0}
+#ob-room-section{margin-top:4px}
+#ob-room-input{width:100%;padding:9px 12px;border-radius:6px;border:1.5px solid #A07820;background:#FFF8EC;font-size:16px;font-family:Georgia,serif;color:#5C3D0A;text-align:center;letter-spacing:3px;text-transform:uppercase;margin-bottom:10px}
+#ob-status{font-size:12px;color:#5C3D0A;min-height:20px;margin-bottom:8px;font-style:italic}
+#ob-room-code-display{font-size:26px;font-weight:700;letter-spacing:6px;color:#5C3D0A;background:#EAD8B0;border-radius:8px;padding:10px 0;margin-bottom:8px;border:1.5px dashed #A07820;cursor:pointer;user-select:all}
+#ob-room-code-display:hover{background:#DCC8A0}
+#ob-copy-hint{font-size:10px;color:#8A6030;margin-bottom:14px}
+#ob-waiting-dots{display:inline-block;width:18px;text-align:left}
+#ob-cancel-btn{margin-top:2px}
+/* Connection indicator */
+#net-indicator{position:fixed;bottom:8px;right:10px;font-size:10px;color:#8A6030;z-index:999;pointer-events:none;opacity:0;transition:opacity .4s}
+#net-indicator.show{opacity:1}
+</style>
+
+<div id="online-modal">
+  <div id="online-box">
+    <h2>🌐 ONLINE MULTIPLAYER 🌐</h2>
+    <p>Play Royal Convoy over the internet with a friend</p>
+    <div id="ob-main-btns">
+      <button class="ob-btn" onclick="onlineCreate()">⚔ Create a Game</button>
+      <button class="ob-btn sec" onclick="onlineShowJoin()">🔑 Join a Game</button>
+      <button class="ob-btn sec" id="ob-cancel-main" onclick="closeOnlineLobby()" style="margin-top:6px">✕ Back</button>
+    </div>
+    <div id="ob-room-section" style="display:none">
+      <div id="ob-status"></div>
+      <div id="ob-room-code-display" style="display:none" onclick="obCopyCode()" title="Click to copy"></div>
+      <div id="ob-copy-hint" style="display:none">📋 Click code to copy &amp; share with your opponent</div>
+      <input id="ob-room-input" type="text" maxlength="6" placeholder="ROOM CODE" style="display:none" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')"/>
+      <button class="ob-btn" id="ob-action-btn" style="display:none" onclick="onlineJoinRoom()">Join Game</button>
+      <button class="ob-btn sec" id="ob-cancel-btn" onclick="onlineCancelLobby()">✕ Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="net-indicator">🌐 Online</div>
+
 <div id="mode-modal">
   <div id="mode-box">
     <h2>Welcome to Royal Convoy!</h2>
@@ -344,11 +412,13 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
     <button class="mode-btn" onclick="startGame(false,false)">⚔ Player vs CPU — Normal Difficulty</button>
     <button class="mode-btn" onclick="startGame(false,true)" style="background:#EAD0C0;border-color:#8A4020">💀 Player vs CPU — Medieval Difficulty!</button>
     <button class="mode-btn" onclick="startGame(true,false)">👥 Player vs Player — Pass and Play</button>
+    <button class="mode-btn" onclick="openOnlineLobby()" style="background:#D8ECD8;border-color:#3A8A4A;margin-top:4px">🌐 Online Multiplayer</button>
   </div>
 </div>
 <div id="gold-flash">✦ CPU spends gold to move! ✦</div>
 <div id="game-wrap"><div id="game">
   <div id="header" style="position:relative;text-align:center">
+    <button id="btn-audio" onclick="toggleAudio()" title="Toggle audio" style="position:absolute;left:0;top:50%;transform:translateY(-50%);background:none;border:none;font-size:20px;cursor:pointer;padding:2px 4px;line-height:1">🔊</button>
     <div style="flex:1"><h1>⚔ ROYAL CONVOY ⚔</h1><div class="sub">✦ Escort the Royals safely across the Kingdom ✦</div></div>
     <button class="act" onclick="newGame()" style="position:absolute;right:0;top:50%;transform:translateY(-50%)">New Game</button>
   </div>
@@ -384,9 +454,11 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
       <div class="li"><div class="ld" style="background:#A8C8F0;border:2.5px solid #2A5A9A"></div>Reachable</div>
       <div style="margin-top:5px;line-height:2.0;font-size:10px">
         Knight: +2 Steps<br>Shield: Absorbs 1st Hit<br>Siege: Storms Castles<br>
-        Thief: Moves↑, Steals Coin<br>Archer: Range-1 Kill<br>
+        Thief: Moves↑, Steals Coin<br>Archer: Range-1 Kill<br>Longbow: Range-2 Kill<br>
+        Mercenary: Deploy to castle (2💰)<br>
         Merchant: +1💰 Castle +2💰 Gold<br>Sword: Capture→Chain Attack<br>
         Soldier: Unlimited Lives<br>King/Queen: −1 Step<br>
+        Saboteur: Explodes on contact<br>
       </div>
     </div>
     <div style="margin-top:8px;padding:6px 4px;text-align:center;border-top:1px solid #C4A050">
@@ -421,6 +493,7 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
             <button class="act pri" onclick="confirmCS()" style="font-size:10px;padding:5px 10px">March!</button>
             <button class="act" onclick="cancelCS()" style="font-size:10px;padding:5px 10px">Cancel</button>
           </div>
+
         </div>
       </div>
     </div>
@@ -436,6 +509,7 @@ const ix=(c,r)=>(r-1)*5+(c-1);
 const MAPS=[
   {
     id:'tkr',name:"The King's Road",desc:'Balanced map. Great for new players to hone their skills. Siege units will prove essential!',
+    units:['knight','siege','archer','mercenary','merchant','sword','soldier','carriage'],
     SP1:ix(1,1),DP1:ix(1,16),SP2:ix(5,1),DP2:ix(5,16),
     PRV1:new Set([ix(1,1),ix(1,2),ix(1,3),ix(1,4),ix(1,14),ix(1,15),ix(1,16)]),
     PRV2:new Set([ix(5,1),ix(5,2),ix(5,3),ix(5,4),ix(5,14),ix(5,15),ix(5,16)]),
@@ -448,6 +522,7 @@ const MAPS=[
   },
   {
     id:'map2',name:'The Contested Crossing',desc:'Long, arduous map.  Early bottleneck will beget bloodshed. Private squares allow for shortcuts through a winding path. Beware of the bandits!',
+    units:['knight','siege','thief','longbow','mercenary','merchant','sword','soldier','saboteur','carriage'],
     SP1:ix(1,1),DP1:ix(1,16),SP2:ix(5,1),DP2:ix(5,16),
     PRV1:new Set([ix(1,1),ix(2,1),ix(3,6),ix(3,7),ix(1,15),ix(2,15),ix(1,16)]),
     PRV2:new Set([ix(4,1),ix(5,1),ix(3,9),ix(3,10),ix(4,15),ix(5,15),ix(5,16)]),
@@ -460,6 +535,7 @@ const MAPS=[
   },
   {
     id:'map3',name:'The Narrow Pass',desc:'Small, narrow map. Royals have a short path to victory. Archers can rain death on adjacent private squares!',
+    units:['knight','shield','siege','thief','archer','merchant','sword','soldier','saboteur'],
     SP1:ix(3,1),DP1:ix(2,13),SP2:ix(4,2),DP2:ix(3,14),
     PRV1:new Set([ix(3,1),ix(3,2),ix(3,3),ix(3,4),ix(2,10),ix(2,11),ix(2,12),ix(2,13)]),
     PRV2:new Set([ix(4,2),ix(4,3),ix(4,4),ix(4,5),ix(3,11),ix(3,12),ix(3,13),ix(3,14)]),
@@ -471,6 +547,7 @@ const MAPS=[
   },
   {
     id:'map4',name:"Thieve's Playground",desc:"Medium sized map that can play fast with generous roll-agains. Thief units will find plenty of cover where other units can't find them",
+    units:['knight','shield','siege','thief','merchant','mercenary','soldier','carriage'],
     SP1:ix(1,1),DP1:ix(1,13),SP2:ix(5,1),DP2:ix(5,13),
     PRV1:new Set([ix(1,1),ix(1,2),ix(1,7),ix(1,12),ix(1,13)]),
     PRV2:new Set([ix(5,1),ix(5,2),ix(5,8),ix(5,12),ix(5,13)]),
@@ -483,6 +560,7 @@ const MAPS=[
   },
   {
     id:'map5',name:"Stone's Throw",desc:'Compact map. Each player has unique advantages early. Units can reach their tourney without crossing paths with the enemy. Bandits lurk near the tourney!',
+    units:['knight','shield','thief','archer','longbow','merchant','sword','soldier','saboteur'],
     SP1:ix(1,1),DP1:ix(1,10),SP2:ix(5,1),DP2:ix(5,10),
     PRV1:new Set([ix(1,1),ix(1,2),ix(1,8),ix(1,9),ix(1,10)]),
     PRV2:new Set([ix(5,1),ix(5,2),ix(5,8),ix(5,9),ix(5,10)]),
@@ -525,10 +603,10 @@ for(let r=1;r<=ROWS;r++) for(let c=1;c<=COLS;c++){const i=ix(c,r);if(ACT.has(i))
 // UNIT CONSTANTS
 // Kingsguard: knight, shield, siege, archer (NOT thief, NOT merchant)
 // ═══════════════════════════════════════════
-const KG=new Set(['knight','shield','siege','archer','sword','soldier']);
+const KG=new Set(['knight','shield','siege','archer','longbow','mercenary','sword','soldier']);
 const ROY=new Set(['king','queen']);
-const NROY=new Set(['knight','shield','siege','thief','archer','merchant','sword','soldier']);
-const NCS=new Set(['king','queen','merchant']); // cannot spend coins
+const NROY=new Set(['knight','shield','siege','thief','archer','longbow','mercenary','merchant','sword','soldier','saboteur','carriage']);
+const NCS=new Set(['king','queen','merchant','saboteur','carriage']); // cannot spend coins
 
 // ═══════════════════════════════════════════
 // SVG ICONS (compact inline versions)
@@ -538,20 +616,45 @@ function svgShield(c,k){const s=k?k.stroke:c==='p1'?'#4A7AAA':'#AA4A4A',b=k?k.bg
 function svgSiege(c,k){const s=k?k.stroke:c==='p1'?'#4A7AAA':'#AA4A4A',b=k?k.bg:c==='p1'?'#A8C4E0':'#E0A8A8';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${b}" stroke="${s}" stroke-width="1.5"/><circle cx="7" cy="28" r="5" fill="none" stroke="#3A2808" stroke-width="1.5"/><circle cx="7" cy="28" r="1.5" fill="#5A3A10"/><line x1="7" y1="23" x2="7" y2="33" stroke="#5A3A10" stroke-width="1"/><line x1="2" y1="28" x2="12" y2="28" stroke="#5A3A10" stroke-width="1"/><circle cx="29" cy="28" r="5" fill="none" stroke="#3A2808" stroke-width="1.5"/><circle cx="29" cy="28" r="1.5" fill="#5A3A10"/><line x1="29" y1="23" x2="29" y2="33" stroke="#5A3A10" stroke-width="1"/><line x1="24" y1="28" x2="34" y2="28" stroke="#5A3A10" stroke-width="1"/><rect x="5" y="24" width="26" height="4" rx="1" fill="#9A7A3A" stroke="#5A3A10" stroke-width="1"/><line x1="12" y1="24" x2="12" y2="17" stroke="#8A6A2A" stroke-width="2" stroke-linecap="round"/><line x1="24" y1="24" x2="24" y2="17" stroke="#8A6A2A" stroke-width="2" stroke-linecap="round"/><circle cx="18" cy="17" r="2.5" fill="#6A4A18" stroke="#3A2808" stroke-width="1"/><line x1="18" y1="17" x2="7" y2="9" stroke="#8A6A2A" stroke-width="2.5" stroke-linecap="round"/><circle cx="7" cy="8" r="3.5" fill="#888780" stroke="#5F5E5A" stroke-width="1"/><line x1="18" y1="17" x2="26" y2="22" stroke="#8A6A2A" stroke-width="2" stroke-linecap="round"/><rect x="23" y="22" width="6" height="4" rx="1" fill="#5A4020" stroke="#3A2808" stroke-width="0.8"/></svg>`;}
 function svgThief(c,k){const bg=k?k.bg:c==='p1'?'#A8C4E0':'#E0A8A8',s=k?k.stroke:c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">🗡️</text></svg>`;}
 function svgLongbow(c,k){const bg=k?k.bg:c==='p1'?'#A8C4E0':'#E0A8A8',s=k?k.stroke:c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">🏹</text></svg>`;}
+function svgLongbow2(c,k){const bg=k?k.bg:c==='p1'?'#A8C4E0':'#E0A8A8',s=k?k.stroke:c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">🎯</text></svg>`;}
 function svgMerchant(c,k){const bg=k?k.bg:c==='p1'?'#A8C4E0':'#E0A8A8',s=k?k.stroke:c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">🤠</text></svg>`;}
 function svgKing(c,k){const bg=k?k.bg:c==='p1'?'#A8C4E0':'#E0A8A8',s=k?k.stroke:c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">🤴</text></svg>`;}
 function svgQueen(c,k){const bg=k?k.bg:c==='p1'?'#A8C4E0':'#E0A8A8',s=k?k.stroke:c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">👸</text></svg>`;}
 
 function svgSword(c,k){const bg=k?k.bg:c==='p1'?'#A8C4E0':'#E0A8A8',s=k?k.stroke:c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">⚔️</text></svg>`;}
 function svgSoldier(c,k){const bg=k?k.bg:c==='p1'?'#A8C4E0':'#E0A8A8',s=k?k.stroke:c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">🚶</text></svg>`;}
+function svgSaboteur(c,k){const bg=k?k.bg:c==='p1'?'#A8C4E0':'#E0A8A8',s=k?k.stroke:c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">🧨</text></svg>`;}
+function svgCarriage(c,k){const bg=k?k.bg:c==='p1'?'#A8C4E0':'#E0A8A8',s=k?k.stroke:c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">🛒</text></svg>`;}
+function svgCarriageBonded(royEmoji){return function(c,k){const bg=k?k.bg:c==='p1'?'#A8C4E0':'#E0A8A8',s=k?k.stroke:c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><ellipse cx="18" cy="19" rx="14" ry="9" fill="none" stroke="${s}" stroke-width="1" opacity="0.6"/><text x="11" y="23" text-anchor="middle" font-size="13">🛒</text><text x="25" y="23" text-anchor="middle" font-size="13">${royEmoji}</text></svg>`;};}
+function svgMercenary(c,k){const bg=k?k.bg:c==='p1'?'#A8C4E0':'#E0A8A8',s=k?k.stroke:c==='p1'?'#4A7AAA':'#AA4A4A';return`<svg width="100%" height="100%" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="${bg}" stroke="${s}" stroke-width="1.5"/><text x="18" y="24" text-anchor="middle" font-size="20">🪓</text></svg>`;}
 
 const UNITS=[
   {t:'knight',l:'Knight',f:svgKnight},{t:'shield',l:'Shield',f:svgShield},
   {t:'siege',l:'Siege',f:svgSiege},{t:'thief',l:'Thief',f:svgThief},
-  {t:'archer',l:'Archer',f:svgLongbow},{t:'merchant',l:'Merchant',f:svgMerchant},
+  {t:'archer',l:'Archer',f:svgLongbow},{t:'longbow',l:'Longbow',f:svgLongbow2},{t:'merchant',l:'Merchant',f:svgMerchant},
   {t:'sword',l:'Sword',f:svgSword},{t:'soldier',l:'Soldier',f:svgSoldier},
-  {t:'king',l:'King',f:svgKing},{t:'queen',l:'Queen',f:svgQueen}
+  {t:'king',l:'King',f:svgKing},{t:'queen',l:'Queen',f:svgQueen},
+  {t:'saboteur',l:'Saboteur',f:svgSaboteur},
+  {t:'mercenary',l:'Mercenary',f:svgMercenary},
+  {t:'carriage',l:'Carriage',f:svgCarriage}
 ];
+// The 10 standard units that appear on every map by default.
+// New/special units (e.g. saboteur) are NOT in this list — they only appear
+// on maps that explicitly include them in the map's `units` array.
+const DEFAULT_UNITS=['knight','shield','siege','thief','archer','longbow','mercenary','merchant','sword','soldier','king','queen'];
+
+// Returns the ordered unit list for the current map.
+// If the map defines a `units` array, use it — always ensuring king & queen are included.
+// Falls back to DEFAULT_UNITS if no map-specific units are defined.
+function getMapUnits(){
+  var mapUnits=_currentMap&&_currentMap.units;
+  if(!mapUnits||!mapUnits.length){
+    return UNITS.filter(function(u){return DEFAULT_UNITS.indexOf(u.t)>=0;});
+  }
+  var types=new Set(mapUnits);
+  types.add('king'); types.add('queen'); // always required
+  return UNITS.filter(function(u){return types.has(u.t);});
+}
 
 const DF=[0,1,1,2,2,3];
 const DF_NECMO=[0,1,1,2,2,3,4];
@@ -574,7 +677,14 @@ function ac(){
   if(_ac.state==='suspended') _ac.resume();
   return _ac;
 }
+var _audioMuted=false;
+function toggleAudio(){
+  _audioMuted=!_audioMuted;
+  var btn=document.getElementById('btn-audio');
+  if(btn) btn.textContent=_audioMuted?'🔇':'🔊';
+}
 function beep(freq,type,vol,attack,sustain,decay){
+  if(_audioMuted) return;
   try{
     const c=ac(),g=c.createGain(),o=c.createOscillator();
     o.connect(g);g.connect(c.destination);
@@ -587,6 +697,7 @@ function beep(freq,type,vol,attack,sustain,decay){
   }catch(e){}
 }
 function noise(vol,dur){
+  if(_audioMuted) return;
   try{
     const c=ac(),buf=c.createBuffer(1,c.sampleRate*dur,c.sampleRate);
     const d=buf.getChannelData(0);
@@ -762,6 +873,41 @@ function isRoyProt(pid,cell){
   return oadj(cell).some(c=>{const f=G.pl[pid].bench.find(t=>!t.done&&t.cell===c);return f&&KG.has(f.t);});
 }
 
+// ─── CARRIAGE HELPERS ───
+function getCarriagePartner(pid, tok){
+  if(!tok.bondedTo) return null;
+  for(var _p=0;_p<G.pl.length;_p++)
+    for(var _i=0;_i<G.pl[_p].bench.length;_i++)
+      if(G.pl[_p].bench[_i].id===tok.bondedTo) return G.pl[_p].bench[_i];
+  return null;
+}
+function isBondedCarriage(tok){ return tok.t==='carriage'&&!!tok.bondedTo; }
+function isBondedRoyal(tok){ return ROY.has(tok.t)&&!!tok.bondedTo; }
+function carriageRoyEmoji(royal){
+  if(!royal) return '👑';
+  return royal.t==='queen'?'👸':'🤴';
+}
+// Update bonded carriage SVG to reflect royal partner
+function refreshCarriageSvg(carTok, royTok){
+  carTok.f=svgCarriageBonded(carriageRoyEmoji(royTok));
+}
+// Bond a carriage and a royal together
+function bondCarriageRoyal(pid, carTok, royTok){
+  carTok.bondedTo=royTok.id;
+  royTok.bondedTo=carTok.id;
+  refreshCarriageSvg(carTok, royTok);
+  // Move both to same cell (they should already be on same cell — just sync)
+  royTok.cell=carTok.cell;
+}
+// Unbond — called when captured or finish
+function unbondCarriage(carTok, royTok){
+  if(carTok){carTok.bondedTo=null; carTok.f=svgCarriage;}
+  if(royTok){royTok.bondedTo=null;}
+}
+// isRoyProt extended: bonded carriage also benefits from kingsguard protection
+function carriageIsRoyProt(pid, cell){
+  return oadj(cell).some(function(c){var f=G.pl[pid].bench.find(function(t){return !t.done&&t.cell===c;});return f&&KG.has(f.t);});
+}
 function abcn(sq,n,pid){
   const opp=1-pid,vis=new Set([sq]);
   let fr=[sq];
@@ -797,6 +943,17 @@ function lbtg(lc){
   return oadj(lc);
 }
 
+function lbtg2(lc){
+  // Longbow: range-2, cells exactly 2 orthogonal steps away
+  const res=[], seen=new Set([lc]);
+  for(const mid of oadj(lc)){
+    for(const far of oadj(mid)){
+      if(!seen.has(far)){seen.add(far);res.push(far);}
+    }
+  }
+  return res;
+}
+
 // ═══════════════════════════════════════════
 // PATHFINDING — iterative only
 // ═══════════════════════════════════════════
@@ -809,14 +966,57 @@ function canLand(pid,tok,dest){
   
   // Bandit capture rules: kings/queens/merchants cannot capture, archers only capture adjacent
   if(hasBandits()&&G_BANDIT.alive&&dest===G_BANDIT.cell){
-    // Kings, Queens, and Merchants cannot capture the bandit at all
-    if(ROY.has(tok.t)||tok.t==='merchant') return false;
-    // Archer can only capture adjacent, not direct landing
+    // Kings, Queens, and Merchants cannot capture the bandit
+    // Exception: Prince Callen's king can capture the bandit
+    var callenKingBandit=tok.t==='king'&&kid==='callen';
+    if((ROY.has(tok.t)||tok.t==='merchant')&&!callenKingBandit) return false;
+    // Archer/Longbow can only capture from range, not direct landing
     if(tok.t==='archer') return false;
+    if(tok.t==='longbow') return false;
   }
+
+  // Saboteur can land anywhere on the active map (it blows up on contact)
+  if(tok.t==='saboteur') return true;
   
   if(tok.t==='queen'&&kid==='kasey') return en.length===0&&(fr.length===0||fr.length===1);
-  if(ROY.has(tok.t)) return en.length===0&&fr.length===0;
+  // Prince Callen's king can capture enemy units like a standard melee unit
+  if(tok.t==='king'&&kid==='callen'){
+    const royEnemy=en.find(e=>ROY.has(e.t));
+    if(royEnemy&&isRoyProt(opp,dest)) return false;
+    if(CAS.has(dest)&&en.length>0) return false;
+    return frNonMerch.length===0;
+  }
+  // Carriage landing rules
+  if(tok.t==='carriage'){
+    // Cannot land on enemies
+    if(en.length>0) return false;
+    // Can land on own friendly royal (to bond) — unless already bonded to one
+    var frRoyal=fr.find(function(t){return ROY.has(t.t);});
+    if(frRoyal){
+      // Can only bond with one royal at a time
+      if(tok.bondedTo) return false; // already bonded
+      if(frRoyal.bondedTo) return false; // royal already bonded to a different carriage
+      return true; // bond!
+    }
+    // Otherwise standard: no friendly non-merchant blocking
+    return frNonMerch.length===0;
+  }
+  // Bonded royal movement: treated like a carriage (no enemy landing, no friendly blocking)
+  // The bonded pair moves as one unit
+  if(ROY.has(tok.t)&&tok.bondedTo){
+    if(en.length>0) return false;
+    return frNonMerch.filter(function(t){return t.id!==tok.bondedTo;}).length===0;
+  }
+  // Unbonded royal: can land on a friendly unbonded carriage (to bond), otherwise no friendly units
+  if(ROY.has(tok.t)){
+    var frCarriage=fr.find(function(t){return t.t==='carriage'&&!t.bondedTo;});
+    if(frCarriage){
+      // Royal lands on carriage to bond — only if neither is already bonded
+      if(tok.bondedTo) return false; // royal already bonded
+      return en.length===0; // fine as long as no enemies here
+    }
+    return en.length===0&&fr.length===0;
+  }
   if(tok.t==='merchant') return fr.length+en.length<=1;
   if(tok.t==='siege'){
     const royEn=en.find(e=>ROY.has(e.t));
@@ -824,18 +1024,26 @@ function canLand(pid,tok,dest){
     return frNonMerch.length===0;
   }
   if(tok.t==='archer') return en.length===0&&frNonMerch.length===0;
+  if(tok.t==='longbow') return en.length===0&&frNonMerch.length===0;
   if(frNonMerch.length>0) return false;
   // Protected ROY square: non-ROY attacker cannot land
   const royEnemy=en.find(e=>ROY.has(e.t));
   if(royEnemy&&isRoyProt(opp,dest)) return false;
+  // Protected bonded carriage: attacker cannot land if kingsguard-protected
+  const bondedCarEnemy=en.find(function(e){return e.t==='carriage'&&e.bondedTo;});
+  if(bondedCarEnemy&&carriageIsRoyProt(opp,dest)) return false;
   if(CAS.has(dest)&&en.length>0) return false;
   return true;
 }
 
 function eRoll(pid,tok,base){
   if(tok.t==='knight') return base+2;
+  // Carriage: +1 mobility always (bonded or not)
+  if(tok.t==='carriage') return base+1;
   if(ROY.has(tok.t)){
-    // Prince Kallen's units move without penalty
+    // If this royal is bonded to a carriage, it gets the carriage's +1 (no penalty)
+    if(tok.bondedTo) return base+1;
+    // Prince Callen's units move without penalty
     var k=pid===0?_p1K:_p2K;
     if(k&&k.id==='callen') return base;
     return base-1;
@@ -872,6 +1080,27 @@ function reach(pid,tok,steps,bench){
       const c=bq.shift(),d=bd.get(c);
       if(c===fin){if(steps>=d)dests.add(fin);break;}
       for(const{cell:nb}of nbrs(c,false)) if(!bd.has(nb)&&!opp.has(nb)){bd.set(nb,d+1);bq.push(nb);}
+    }
+  }
+  // Prince Callen generous exit: king & queen also get BFS to finish
+  if(ROY.has(tok.t)){
+    var callenKid=pid===0?_p1K:_p2K;
+    if(callenKid&&callenKid.id==='callen'){
+      const bq2=[src],bd2=new Map([[src,bench?1:0]]);
+      while(bq2.length){
+        const c=bq2.shift(),d=bd2.get(c);
+        if(c===fin){if(steps>=d)dests.add(fin);break;}
+        for(const{cell:nb}of nbrs(c,false)) if(!bd2.has(nb)&&!opp.has(nb)){bd2.set(nb,d+1);bq2.push(nb);}
+      }
+    }
+  }
+  // Carriage generous exit: always gets BFS to finish (bonded or unbonded)
+  if(tok.t==='carriage'){
+    const bq3=[src],bd3=new Map([[src,bench?1:0]]);
+    while(bq3.length){
+      const c=bq3.shift(),d=bd3.get(c);
+      if(c===fin){if(steps>=d)dests.add(fin);break;}
+      for(const{cell:nb}of nbrs(c,false)) if(!bd3.has(nb)&&!opp.has(nb)){bd3.set(nb,d+1);bq3.push(nb);}
     }
   }
   return dests;
@@ -919,11 +1148,12 @@ function fTok(id){for(const p of G.pl)for(const t of p.bench)if(t.id===id)return
 // GAME STATE
 // ═══════════════════════════════════════════
 function mkPl(pid){
-  return{id:pid,score:0,royDone:0,coins:0,bench:UNITS.map((u,i)=>({
+  return{id:pid,score:0,royDone:0,coins:0,bench:getMapUnits().map((u,i)=>({
     id:'p'+pid+'-'+i, t:u.t, l:u.l, f:u.f,
     cell:-1, sUp:u.t==='shield', sBr:false, done:false,
     lives:ROY.has(u.t)||u.t==='soldier'?null:(pid===0&&G.hardMode?1:2),
     cd:0,
+    bondedTo:null, // carriage: id of bonded royal; royal: id of bonded carriage
     st:{moves:0,kills:0,coins:0,castles:0,finishes:0,deaths:0}
   }))};
 }
@@ -989,7 +1219,7 @@ function _startGame(ft){
   G={turn:ft, phase:'roll', roll:0, d1:null, d2:null, treeSqs,
      ift:true, // is first turn (single die)
      csa:1, csm:false, chain:false, cpuTurnCount:0, p2human:G.p2human||false, hardMode:G.hardMode||false, p1KingId:G.p1KingId||'', p2KingId:G.p2KingId||'',
-     sel:null, rch:new Set(), busy:false, anim:false, snm:false,
+     sel:null, rch:new Set(), busy:false, anim:false, snm:false, mercDeploy:false,
      hist:[], hN:1,
      pl:[mkPl(0),mkPl(1)]};
   applyKingdomBonuses();
@@ -1020,7 +1250,7 @@ function updCP(){
   const pid=G.turn===2?0:G.turn;
   const ok=(G.turn===0||(G.turn===1&&G.p2human))&&!G.anim&&G.phase==='roll'&&!G.chain;
   const btn=document.getElementById('btn-cog');
-  if(btn) btn.disabled=!(ok&&G.pl[pid].coins>0)||G.csm;
+  if(btn) btn.disabled=!(ok&&G.pl[pid].coins>0)||G.csm||G.mercDeploy;
 }
 function openCS(){
   if((G.turn===1&&!G.p2human)||G.phase!=='roll'||G.anim||G.chain) return;
@@ -1031,7 +1261,7 @@ function openCS(){
   document.getElementById('cst').textContent=1;
   document.getElementById('cm').disabled=true;
   document.getElementById('cp2').disabled=(G.turn>1?0:G.pl[G.turn].coins)<=1;
-  setSt('Choose coins — each = 1 step. Royals & Merchant excluded.',false); // clears CPU msg
+  setSt('Choose coins — each = 1 step. Royals & Merchant excluded. Spend 2 to deploy Mercenary to castle.',false);
 }
 function adjCS(d){
   const max=G.turn>1?0:G.pl[G.turn].coins;
@@ -1044,23 +1274,80 @@ function adjCS(d){
 function confirmCS(){
   const amt=G.csa;
   const pid=G.turn;
-  const mv=G.pl[pid].bench.filter(t=>{if(t.done||NCS.has(t.t))return false;return canMove(t,0,amt);});
+  // A mercenary on the bench counts as movable when spending exactly 2 gold
+  const mv=G.pl[pid].bench.filter(t=>{
+    if(t.done) return false;
+    if(t.t==='mercenary'&&t.cell<0&&(t.lives===null||t.lives>0)&&t.cd<=0&&amt===2&&mercEmptyCastles().length>0) return true;
+    if(NCS.has(t.t)) return false;
+    return canMove(t,0,amt);
+  });
   if(!mv.length){setSt('No valid moves for '+amt+' step'+(amt>1?'s':'')+'. Adjust or cancel.',false);return;}
   G.pl[pid].coins-=amt; G.roll=amt; G.d1=null; G.d2=null;
   showCoins(amt);
   G.csm=false;
   document.getElementById('csp-popup').classList.remove('open');
-  
   G.phase='select'; G.rch=new Set(); G.snm=true; render(); updCP();
   const msg='P1 spends '+amt+' gold coin'+(amt>1?'s':'')+' — choose a unit!';
   addH('p1',msg); setSt(msg,false);
 }
 function cancelCS(){
   G.csm=false; G.roll=0;
+  G.mercDeploy=false;
   document.getElementById('csp-popup').classList.remove('open');
   
   resetDice(); G.snm=false; render(); updCP();
   setSt(G.ift?'P1 — roll one die to open!':'P1 — roll the dice!',false);
+}
+
+// ═══════════════════════════════════════════
+// MERCENARY DEPLOY
+// ═══════════════════════════════════════════
+function mercEmptyCastles(){
+  // Returns castle cells that are completely empty (no units from either side)
+  var result=[];
+  CAS.forEach(function(cell){
+    var occupied=G.pl[0].bench.some(function(t){return !t.done&&t.cell===cell;})
+                ||G.pl[1].bench.some(function(t){return !t.done&&t.cell===cell;});
+    if(!occupied) result.push(cell);
+  });
+  return result;
+}
+
+function startMercDeploy(){
+  var pid=G.turn;
+  var merc=G.pl[pid].bench.find(function(t){return t.t==='mercenary'&&!t.done&&t.cell<0&&(t.lives===null||t.lives>0)&&t.cd<=0;});
+  if(!merc||G.pl[pid].coins<2) return;
+  var targets=mercEmptyCastles();
+  if(!targets.length){setSt('No empty castles available for deployment!',false);return;}
+  G.csm=false;
+  G.mercDeploy=true;
+  document.getElementById('csp-popup').classList.remove('open');
+  // Highlight empty castles as targets
+  G.rch=new Set(targets);
+  G.phase='merc-deploy';
+  render();
+  setSt('Choose an empty castle to deploy the Mercenary (2💰).',false);
+}
+
+function placeMercenary(cell){
+  var pid=G.turn;
+  var merc=G.pl[pid].bench.find(function(t){return t.t==='mercenary'&&!t.done&&t.cell<0&&(t.lives===null||t.lives>0)&&t.cd<=0;});
+  if(!merc) return;
+  // Double-check cell is still empty
+  var occupied=G.pl[0].bench.some(function(t){return !t.done&&t.cell===cell;})
+              ||G.pl[1].bench.some(function(t){return !t.done&&t.cell===cell;});
+  if(occupied){setSt('That castle is now occupied — pick another.',false);return;}
+  merc.cell=cell;
+  merc.st.moves++;
+  G.mercDeploy=false;
+  G.rch=new Set();
+  G.phase='roll';
+  var who=pid===0?'p1':'cpu';
+  var msg='Mercenary deployed to castle at '+CC[cell]+'! (2💰)';
+  addH(who,msg); setSt(msg,false);
+  SFX.capture();
+  render();
+  setTimeout(endTurn,600);
 }
 
 // ═══════════════════════════════════════════
@@ -1108,8 +1395,10 @@ function render(){
   document.getElementById('pp1').className='pp'+(G.turn===0?' active':'');
   document.getElementById('pp2').className='pp'+(G.turn===1?' active':'');
   document.getElementById('btn-roll').style.display='';
-  document.getElementById('btn-roll').disabled=!((G.turn===0||(G.turn===1&&G.p2human))&&G.phase==='roll'&&!G.anim)||G.csm;
+  document.getElementById('btn-roll').disabled=!((G.turn===0||(G.turn===1&&G.p2human))&&G.phase==='roll'&&!G.anim)||G.csm||G.mercDeploy;
   updCP();
+  // Online: override button state based on whose turn it is
+  if(_onlineMode) _updateOnlineTurnUI();
 }
 
 function crSVG(sz){return '<svg class="crack" viewBox="0 0 '+sz+' '+sz+'"><path d="M'+(sz*.38)+' '+(sz*.12)+' L'+(sz*.48)+' '+(sz*.32)+' L'+(sz*.36)+' '+(sz*.44)+' L'+(sz*.52)+' '+(sz*.62)+' L'+(sz*.44)+' '+(sz*.82)+'" fill="none" stroke="#AA3A2A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';}
@@ -1124,7 +1413,7 @@ function rBench(pid){
     const er=eRoll(pid,tok,G.roll);
     const hm=!tok.done&&!exc&&er>0&&canMove(tok,pid,G.roll);
     const mv=G.phase==='select'&&G.turn===pid&&(pid===0||(pid===1&&G.p2human))&&!G.anim&&hm;
-    const sx=G.snm&&pid===0&&G.phase==='select'&&!tok.done&&!exc&&!hm;
+    const sx=G.snm&&(pid===0||(pid===1&&G.p2human))&&G.phase==='select'&&!tok.done&&!exc&&!hm;
     const wrap=document.createElement('div'); wrap.className='tok-wrap'; wrap.style.position='relative';
     const d=document.createElement('div');
     const isDead=tok.lives!==null&&tok.lives<=0;
@@ -1172,7 +1461,7 @@ function rBoard(){
     let cls='cell '+(cm[ct]||'sh');
     if(ir) cls+=' highlighted';
     div.className=cls.trim();
-    div.onclick=ir&&!G.anim?function(idx){return function(){moveTo(idx);};}(i):null;
+    div.onclick=ir&&!G.anim?function(idx){return function(){if(G.phase==='merc-deploy'){placeMercenary(idx);}else if(G.phase==='select'&&G.mercDeploy&&G.sel&&G.rch.has(idx)){placeMercenary(idx);}else{moveTo(idx);}};}(i):null;
     div.innerHTML='';
     if(ct==='blank'&&G.treeSqs&&G.treeSqs.has(i)){
       const trees=G.treeSqs.get(i);
@@ -1211,19 +1500,25 @@ function rBoard(){
     if(i===DP1){const n=document.createElement('span');n.className='cell-lbl';n.style.cssText='color:#4A6AA0;top:2px;bottom:auto';n.textContent='P1 Finish';div.appendChild(n);}
     if(i===DP2){const n=document.createElement('span');n.className='cell-lbl';n.style.cssText='color:#A04A4A;top:2px;bottom:auto';n.textContent='CPU Finish';div.appendChild(n);}
     (cT[i]||[]).forEach(function({tok,pid}){
+      // Skip bonded royal — the carriage SVG already shows them merged
+      if(ROY.has(tok.t)&&tok.bondedTo) return;
       const col=pid===0?'p1':'p2';
       const p=document.createElement('div');
       let pcls='piece p'+(pid+1);
-      if(G.sel===tok.id) pcls+=' sel-board';
-
+      // Bonded carriage: highlight if either carriage or its royal is selected
+      var isBondedSel=tok.t==='carriage'&&tok.bondedTo&&G.sel===tok.id;
+      if(G.sel===tok.id||isBondedSel) pcls+=' sel-board';
       else if(tok.t==='shield'&&tok.sBr) pcls+=' sh-brk';
       else if(ROY.has(tok.t)&&tok.cell>=0&&isRoyProt(pid,tok.cell)) pcls+=' roy-prot';
+      else if(tok.t==='carriage'&&tok.bondedTo&&tok.cell>=0&&carriageIsRoyProt(pid,tok.cell)) pcls+=' roy-prot';
       p.className=pcls; p.style.position='relative';
       p.innerHTML=tok.f(col,pid===0?_p1K:_p2K);
       if(tok.t==='shield'&&tok.sBr) p.insertAdjacentHTML('beforeend',crSVG(36));
       if(!G.anim&&G.phase==='select'&&G.turn===pid&&(pid===0||(pid===1&&G.p2human))){
         const ic2=G.d1===null&&G.d2===null;
-        if(!(ic2&&NCS.has(tok.t))&&canMove(tok,pid,G.roll)){
+        // For bonded pair: carriage is the mover; also allow clicking bonded royal token area
+        var moveTok=tok;
+        if(!(ic2&&NCS.has(tok.t))&&canMove(moveTok,pid,G.roll)){
           p.classList.add('clickable');
           p.onclick=function(e){e.stopPropagation();selTok(tok.id);};
         }
@@ -1346,7 +1641,7 @@ var KINGDOMS=[
   {id:'kasey',  name:'Queen Kasey the Belligerent', short:'Queen Kasey', queenName:'Queen Kasey', kingName:'King Doug', bonus:'Queen captures friendly units for +1 coin', bg:'#FF8C00',stroke:'#CC6600', privBg:'#E8B870',privBorder:'#B06820'},
   {id:'necmo',  name:'King Grant the Swift',        short:'King Grant',  queenName:'Queen Laura',                      bonus:'Rolls 7-sided dice — chance at rolls of 4', bg:'#8B5E3C',stroke:'#5C3A20', privBg:'#D4A574',privBorder:'#A0724A'},
   {id:'aaron',  name:'King Aaron the Fierce',       short:'King Aaron',  queenName:'Queen Maddie',                     bonus:"Sword eliminates units regardless of lives remaining",  bg:'#FFD700',stroke:'#CCA800', privBg:'#FFF5B0',privBorder:'#E0CC50'},
-  {id:'callen', name:'Prince Kallen the Mischievous', short:'Prince Kallen', queenName:'Princess Peach', bonus:'Royal units move without penalty',   bg:'#B0D8D0',stroke:'#2A9A8A', privBg:'#D0E8E4',privBorder:'#2A9A8A'}
+  {id:'callen', name:'Prince Callen the Mischievous', short:'Prince Callen', queenName:'Princess Peach', bonus:'Royals move without penalty & reach finish flexibly; King can capture enemies',   bg:'#B0D8D0',stroke:'#2A9A8A', privBg:'#D0E8E4',privBorder:'#2A9A8A'}
 ];
 var _p1K=null,_p2K=null,_pendingP2h=false,_pendingHard=false;
 
@@ -1471,7 +1766,7 @@ function applyKingdomBonuses(){
     if(kid==='john') G.pl[pid].coins+=3;
     if(kid==='adam'){
       G.pl[pid].bench.forEach(function(tok){
-        if((tok.t==='sword'||tok.t==='archer')&&tok.lives!==null)
+        if((tok.t==='sword'||tok.t==='archer'||tok.t==='longbow')&&tok.lives!==null)
           tok.lives=Math.min(3,tok.lives+1);
       });
     }
@@ -1553,7 +1848,7 @@ function loadMap(mapId){
 }
 var G_BHO=null;
 var G_BLT_ACTIVE=[];
-var UNIT_EMOJIS={knight:'🐴',shield:'🛡️',siege:'⚙️',thief:'🗡️',archer:'🏹',merchant:'🤠',sword:'⚔️',soldier:'🚶',king:'👑',queen:'👸'};
+var UNIT_EMOJIS={knight:'🐴',shield:'🛡️',siege:'⚙️',thief:'🗡️',archer:'🏹',longbow:'🎯',mercenary:'🪓',merchant:'🤠',sword:'⚔️',soldier:'🚶',king:'👑',queen:'👸',saboteur:'🧨',carriage:'🛒'};
 var G_BANDIT={cell:-1,roundsUntilSpawn:2,alive:false,destroyed:false,dormant:false,dormancyCounter:0};
 function hasBandits(){return G_BHO!==null&&!G_BANDIT.destroyed;}
 
@@ -1820,6 +2115,16 @@ function banditTurn(){
           if(ROY.has(t.t)&&isRoyProt(pid,best)) return;
           var stolen=Math.min(1+(ROY.has(t.t)?1:0),G.pl[pid].coins);
           G.pl[pid].coins=Math.max(0,G.pl[pid].coins-stolen);
+          // If bandit captures a saboteur, it explodes!
+          if(t.t==='saboteur'){
+            bench(pid,t,true);
+            var expMsgs=saboteurExplode(t,pid,new Set());
+            var sabMsg='👺 Bandit captures Saboteur — ';
+            expMsgs.forEach(function(m,i){if(i===0){sabMsg+=m;}else{addH('band',m);G.hN++;}});
+            addH('band',sabMsg); setSt(sabMsg,false);
+            captured=true; SFX.capture();
+            return;
+          }
           bench(pid,t,true);
           var isDead=t.lives!==null&&t.lives<=0;
           var stealMsg=stolen>0?(' Steals '+stolen+' coin'+(stolen>1?'s':'')+'!'):'';
@@ -2010,7 +2315,10 @@ function showCpuKingSelect(onDone){
   btns.appendChild(rb);
   modal.classList.add('show');
 }
-function p2lbl(){return G&&G.p2human?'P2':'CPU';}
+function p2lbl(){
+  if(_onlineMode) return _myPid===0?'Opponent':'You (P2)';
+  return G&&G.p2human?'P2':'CPU';
+}
 function p1lbl(){return 'P1';}
 function doRoll(){
   var pid=G.turn===0?0:1;
@@ -2046,11 +2354,28 @@ function selTok(id){
   if(G.phase!=='select'||G.anim) return;
   if(G.turn===1&&!G.p2human) return;
   const pid=G.turn;
-  const tok=fTok(id); if(!tok||tok.id.indexOf('p'+pid+'-')!==0) return;
+  var tok=fTok(id); if(!tok||tok.id.indexOf('p'+pid+'-')!==0) return;
+  // If player clicks bonded royal, redirect to the carriage (it's the mover for the pair)
+  if(ROY.has(tok.t)&&tok.bondedTo){
+    var carTok=getCarriagePartner(pid,tok);
+    if(carTok) tok=carTok;
+  }
   const er=eRoll(pid,tok,G.roll);
   if(er<=0){setSt('This unit cannot move on this roll.',G.chain);return;}
   if(!canMove(tok,pid,G.roll)){setSt('No valid moves for that unit.',G.chain);return;}
-  G.sel=id; showDice(G.d1,G.d2,er,G.chain?'chn':er!==G.roll?'bon':null);
+  // Bench mercenary selected with 2 gold: show empty castles as destinations
+  if(tok.t==='mercenary'&&tok.cell<0&&G.roll===2){
+    var castles=mercEmptyCastles();
+    G.sel=tok.id;
+    G.rch=new Set(castles);
+    G.mercDeploy=true;
+    showDice(G.d1,G.d2,2,null);
+    render();
+    setSt('Mercenary — '+castles.length+' castle'+(castles.length!==1?'s':'')+' available.',G.chain);
+    return;
+  }
+  G.mercDeploy=false;
+  G.sel=tok.id; showDice(G.d1,G.d2,er,G.chain?'chn':er!==G.roll?'bon':null);
   G.rch=gtok(pid,tok,G.roll); render();
   setSt(tok.l+' — '+G.rch.size+' destination'+(G.rch.size!==1?'s':'')+' available.',G.chain);
 }
@@ -2106,15 +2431,127 @@ function lbKills(pid,dest){
   return{k,cs};
 }
 
+function lbKills2(pid,dest){
+  const opp=1-pid; let k=0,cs=0;
+  for(const cell of lbtg2(dest)){
+    if(CAS.has(cell)) continue;
+    G.pl[opp].bench.filter(t=>!t.done&&t.cell===cell).forEach(function(ot){
+      if(ot.t==='shield'&&ot.sUp) return;
+      if(ROY.has(ot.t)&&isRoyProt(opp,cell)) return;
+      cs+=steal(pid,opp,ot); bench(opp,ot,true); k++;
+    });
+  }
+  return{k,cs};
+}
+
+// ═══════════════════════════════════════════
+// SABOTEUR EXPLOSION
+// ═══════════════════════════════════════════
+// Resolves explosion at saboteur's cell. Captures all units on the cell and
+// orthogonally adjacent cells (ignores castles, ignores kingsguard protection).
+// Handles chain explosions if another saboteur is caught in the blast.
+// alreadyExploded: Set of tok.id that have already exploded this chain (prevents double-life-loss).
+function saboteurExplode(sabTok, sabPid, alreadyExploded){
+  if(!alreadyExploded) alreadyExploded=new Set();
+  if(alreadyExploded.has(sabTok.id)) return [];
+  alreadyExploded.add(sabTok.id);
+
+  var cell=sabTok.cell;
+  var blastCells=[cell].concat(oadj(cell)); // center + 4 orthogonal
+  var msgs=[];
+  var chainSaboteurs=[]; // other saboteurs caught in blast to chain-explode after
+
+  // The saboteur itself loses a life (explosion costs it one life)
+  bench(sabPid, sabTok, true);
+  var sabDead=sabTok.lives!==null&&sabTok.lives<=0;
+  msgs.push('🧨 Saboteur EXPLODES at '+CC[cell]+'!'+(sabDead?' (eliminated!)':''));
+
+  // Capture every unit in blast radius (both players + bandit)
+  [0,1].forEach(function(pid){
+    G.pl[pid].bench.forEach(function(t){
+      if(t.done) return;
+      if(t.id===sabTok.id) return; // saboteur itself already handled
+      // If exploded unit is bonded, unbond partner too
+      if(t.bondedTo){
+        var sabPartner=getCarriagePartner(opp,t);
+        unbondCarriage(t.t==='carriage'?t:sabPartner, t.t==='carriage'?sabPartner:t);
+        if(sabPartner&&!sabPartner.done&&sabPartner.cell===t.cell){
+          chainSaboteurs.push({tok:sabPartner,pid:opp}); // will be benched in loop below
+        }
+      }
+      if(t.cell<0) return;
+      if(blastCells.indexOf(t.cell)<0) return;
+      if(alreadyExploded.has(t.id)) return; // already processed in this chain
+
+      if(t.t==='saboteur'){
+        // Chain: this saboteur will explode too — capture it first
+        alreadyExploded.add(t.id);
+        bench(pid,t,true);
+        var chainDead=t.lives!==null&&t.lives<=0;
+        msgs.push('💥 Chain explosion! '+t.l+' detonates!'+(chainDead?' (eliminated!)':''));
+        chainSaboteurs.push({tok:t,pid:pid});
+      } else {
+        // Normal capture — bypasses shield & kingsguard protection
+        steal(pid===0?1:0, pid, t); // attacker is other side; coins go to saboteur's owner
+        steal(sabPid, 1-sabPid, t); // simplified: just strip royal coin
+        // Actually just use bench directly; steal handles coin logic
+        // Redo: capture on behalf of sabPid
+        if(ROY.has(t.t)){var s2=Math.min(1,G.pl[pid].coins);G.pl[pid].coins-=s2;G.pl[sabPid].coins+=s2;}
+        var wasBroken=t.t==='shield'&&t.sBr; // already-cracked shield still captured
+        if(t.t==='shield'&&t.sUp){t.sUp=false;t.sBr=true;} // shield absorbs nothing — explosion bypasses
+        bench(pid,t,true);
+        sabTok.st.kills++;
+        var dead=t.lives!==null&&t.lives<=0;
+        msgs.push((pid===sabPid?'💥 Friendly ':'💥 ')+(t.l)+' caught in blast!'+(dead?' (eliminated!)':''));
+        if(ROY.has(t.t)) SFX.royalCapture(); else SFX.capture();
+      }
+    });
+  });
+
+  // Bandit caught in blast?
+  if(hasBandits()&&G_BANDIT.alive&&blastCells.indexOf(G_BANDIT.cell)>=0){
+    killBandit();
+    msgs.push('💥 Bandit caught in the blast!');
+    sabTok.st.kills++;
+    SFX.capture();
+  }
+
+  // Chain explosions
+  chainSaboteurs.forEach(function(cs){
+    var chainMsgs=saboteurExplode(cs.tok, cs.pid, alreadyExploded);
+    chainMsgs.forEach(function(m){msgs.push(m);});
+  });
+
+  return msgs;
+}
+
 function applyMove(pid,tok,dest){
   const opp=1-pid, who=pid===0?'p1':'cpu';
   const fin=(pid===0&&dest===DP1)||(pid===1&&dest===DP2);
   let atk=false, msg='';
 
+  let sabExploded=false;
   if(!fin){
-    if(tok.t==='archer'){
+    if(tok.t==='saboteur'){
+      // Saboteur explodes if landing on any unit (friendly, enemy, or bandit)
+      const hasUnits=G.pl[0].bench.some(t=>!t.done&&t.id!==tok.id&&t.cell===dest)||
+                     G.pl[1].bench.some(t=>!t.done&&t.id!==tok.id&&t.cell===dest)||
+                     (hasBandits()&&G_BANDIT.alive&&G_BANDIT.cell===dest);
+      if(hasUnits){
+        tok.cell=dest; // place saboteur at dest before explosion resolves
+        var expMsgs=saboteurExplode(tok,pid,new Set());
+        expMsgs.forEach(function(m,i){if(i===0){msg=m;}else{addH(who,m);G.hN++;}});
+        atk=true;
+        sabExploded=true;
+        tok.cell=-1; // always return to bench after exploding (bench() already called inside saboteurExplode)
+        // Fall through to finish move logic (coin check, endTurn, etc.)
+      }
+    } else if(tok.t==='archer'){
       const{k,cs}=lbKills(pid,dest);
       if(k>0){tok.st.kills+=k;SFX.capture();msg='Archer fells '+k+' unit'+(k>1?'s':'')+' at '+CC[dest]+'!'+(cs>0?' '+cs+' gold seized!':'');atk=true;}
+    } else if(tok.t==='longbow'){
+      const{k,cs}=lbKills2(pid,dest);
+      if(k>0){tok.st.kills+=k;SFX.capture();msg='Longbow fells '+k+' unit'+(k>1?'s':'')+' at '+CC[dest]+'!'+(cs>0?' '+cs+' gold seized!':'');atk=true;}
     } else if(tok.t!=='merchant'){
       const en=G.pl[opp].bench.filter(t=>!t.done&&t.cell===dest);
       if(en.length>0){
@@ -2135,25 +2572,74 @@ function applyMove(pid,tok,dest){
           if(pid===0){document.getElementById('btn-roll').disabled=false;updCP();}
           setTimeout(endTurn,1400); return;
         }
-        const s=steal(pid,opp,ot);
-        if(ROY.has(ot.t))SFX.royalCapture();else SFX.capture();
-        let tb=0;
-        if(tok.t==='thief'&&G.pl[opp].coins>0){tb=Math.min(1,G.pl[opp].coins);G.pl[opp].coins-=tb;G.pl[pid].coins+=tb;}
-        en.forEach(function(e){bench(opp,e,true);});
-        // Aaron's sword: instantly eliminate captured unit (not soldiers or royals)
-        var isAaronSword=tok.t==='sword'&&(pid===0?G.p1KingId:G.p2KingId)==='aaron';
-        if(isAaronSword&&!ROY.has(ot.t)&&ot.lives!==null){ot.lives=0;}
-        tok.st.kills++;
-        const livesLeft=ot.lives!==null?ot.lives:null;
-        const livesMsg=livesLeft!==null?(livesLeft>0?' ('+['','I','II','III'][Math.min(livesLeft,3)]+' life'+(livesLeft===1?' remains':' remain')+')':' (eliminated!)'):'';
-        const aaronMsg=isAaronSword&&!ROY.has(ot.t)&&ot.lives!==null?' ⚔ Fierce blow — eliminated!':'';
-        msg=tok.l+' captures '+ot.l+' at '+CC[dest]+'!'+(aaronMsg||livesMsg)+(s>0?' '+s+' royal gold seized!':'')+(tb>0?' +1 pilfered!':'');
-        atk=true;
+        // Check if landing on a saboteur — it detonates!
+        if(ot.t==='saboteur'){
+          const s=steal(pid,opp,ot);
+          SFX.capture();
+          // Saboteur explodes upon capture — resolve explosion at its current cell
+          var sabCell=ot.cell;
+          ot.cell=sabCell; // ensure position set
+          var expMsgs2=saboteurExplode(ot,opp,new Set());
+          tok.st.kills++;
+          expMsgs2.forEach(function(m2,i){if(i===0){msg=tok.l+' captures Saboteur — '+m2;}else{addH(who,m2);G.hN++;}});
+          atk=true;
+        } else {
+          const s=steal(pid,opp,ot);
+          if(ROY.has(ot.t))SFX.royalCapture();else SFX.capture();
+          let tb=0;
+          if(tok.t==='thief'&&G.pl[opp].coins>0){tb=Math.min(1,G.pl[opp].coins);G.pl[opp].coins-=tb;G.pl[pid].coins+=tb;}
+          en.forEach(function(e){
+            // If captured unit is part of a bonded carriage pair, break bond and bench both
+            if(e.bondedTo){
+              var partner2=getCarriagePartner(opp,e);
+              unbondCarriage(e.t==='carriage'?e:partner2, e.t==='carriage'?partner2:e);
+              if(partner2&&!partner2.done){
+                bench(opp,partner2,true); // partner also gets benched (captured)
+              }
+            }
+            bench(opp,e,true);
+          });
+          // Aaron's sword: instantly eliminate captured unit (not soldiers or royals)
+          var isAaronSword=tok.t==='sword'&&(pid===0?G.p1KingId:G.p2KingId)==='aaron';
+          if(isAaronSword&&!ROY.has(ot.t)&&ot.lives!==null){ot.lives=0;}
+          tok.st.kills++;
+          const livesLeft=ot.lives!==null?ot.lives:null;
+          const livesMsg=livesLeft!==null?(livesLeft>0?' ('+['','I','II','III'][Math.min(livesLeft,3)]+' life'+(livesLeft===1?' remains':' remain')+')':' (eliminated!)'):'';
+          const aaronMsg=isAaronSword&&!ROY.has(ot.t)&&ot.lives!==null?' ⚔ Fierce blow — eliminated!':'';
+          msg=tok.l+' captures '+ot.l+' at '+CC[dest]+'!'+(aaronMsg||livesMsg)+(s>0?' '+s+' royal gold seized!':'')+(tb>0?' +1 pilfered!':'');
+          atk=true;
+        }
       }
     }
   }
 
-  tok.cell=dest;
+  if(!sabExploded) tok.cell=dest;
+
+  // ── CARRIAGE BONDING ──
+  if(!sabExploded&&!fin){
+    // Check if carriage just landed on a friendly royal (or royal on carriage) → bond them
+    if(tok.t==='carriage'&&!tok.bondedTo){
+      var frRoyAtDest=G.pl[pid].bench.find(function(t){return !t.done&&t.id!==tok.id&&t.cell===dest&&ROY.has(t.t)&&!t.bondedTo;});
+      if(frRoyAtDest){
+        bondCarriageRoyal(pid,tok,frRoyAtDest);
+        addH(who,tok.l+' bonds with '+frRoyAtDest.l+'! They move together.');
+        G.hN++;
+      }
+    } else if(ROY.has(tok.t)&&!tok.bondedTo){
+      var frCarAtDest=G.pl[pid].bench.find(function(t){return !t.done&&t.id!==tok.id&&t.cell===dest&&t.t==='carriage'&&!t.bondedTo;});
+      if(frCarAtDest){
+        bondCarriageRoyal(pid,frCarAtDest,tok);
+        addH(who,tok.l+' boards the Carriage! They move together.');
+        G.hN++;
+      }
+    }
+    // If bonded pair — move partner to same cell
+    if(tok.bondedTo){
+      var partner=getCarriagePartner(pid,tok);
+      if(partner&&!partner.done) partner.cell=dest;
+    }
+  }
+
   tok.st.moves++;
   // If landing on hideout, destroy it (goes dormant)
   if(hasBandits()&&!G_BANDIT.dormant&&dest===G_BHO){
@@ -2181,6 +2667,13 @@ function applyMove(pid,tok,dest){
   if(hasBandits()&&G_BANDIT.alive&&tok.t==='archer'&&lbtg(dest).includes(G_BANDIT.cell)){
     killBandit();
     addH('band','Archer slays Bandit from '+CC[dest]+'! It will return...');
+    setSt('Bandit slain!',false); SFX.capture();
+    tok.st.kills++;
+  }
+  // Longbow can also capture bandit from range-2
+  if(hasBandits()&&G_BANDIT.alive&&tok.t==='longbow'&&lbtg2(dest).includes(G_BANDIT.cell)){
+    killBandit();
+    addH('band','Longbow slays Bandit from '+CC[dest]+'! It will return...');
     setSt('Bandit slain!',false); SFX.capture();
     tok.st.kills++;
   }
@@ -2232,6 +2725,18 @@ function applyMove(pid,tok,dest){
   if(fin){
     SFX.finish();
     if(ROY.has(tok.t)){
+      // If this royal was bonded to a carriage, unbond and send carriage back with life + cooldown
+      if(tok.bondedTo){
+        var finCarriage=getCarriagePartner(pid,tok);
+        unbondCarriage(finCarriage,tok);
+        if(finCarriage&&!finCarriage.done){
+          finCarriage.cell=-1; finCarriage.st.finishes++;
+          finCarriage.cd=(pid===0?G.p1KingId:G.p2KingId)==='joshua'?2:4;
+          if(finCarriage.lives!==null&&finCarriage.lives<3) finCarriage.lives++;
+          addH(who,'Carriage returns to camp after escorting '+(tok.l)+'! (Lives: '+['','I','II','III'][Math.min(finCarriage.lives,3)]+')');
+          G.hN++;
+        }
+      }
       // ROY permanently finishes — counts toward win
       tok.done=true; tok.cell=-1; tok.st.finishes++;
       G.pl[pid].royDone=(G.pl[pid].royDone||0)+1;
@@ -2247,10 +2752,29 @@ function applyMove(pid,tok,dest){
       // NROY returns to bench — gains a life (max 3), shield resets
       tok.cell=-1; tok.done=false; tok.st.finishes++; tok.cd=(pid===0?G.p1KingId:G.p2KingId)==='joshua'?2:4;
       if(tok.t==='shield'){tok.sUp=true;tok.sBr=false;}
+      // If bonded carriage reaches finish, the royal it's carrying also finishes
+      if(tok.t==='carriage'&&tok.bondedTo){
+        var finRoyal=getCarriagePartner(pid,tok);
+        unbondCarriage(tok,finRoyal);
+        if(finRoyal&&!finRoyal.done){
+          // Royal scores — permanently done
+          finRoyal.done=true; finRoyal.cell=-1; finRoyal.st.finishes++;
+          G.pl[pid].royDone=(G.pl[pid].royDone||0)+1;
+          addH(who,finRoyal.l+' arrives in the Royal Carriage! Royals safe: '+G.pl[pid].royDone+'/2');
+          G.hN++;
+        }
+      }
       if(tok.lives!==null&&tok.lives<3) tok.lives++;
       G.hN++; render();
       const m=tok.l+' returns to camp!'+(tok.lives!==null?' (Lives: '+['','I','II','III'][tok.lives]+')':'');
       addH(who,m); setSt(m,false);
+      // If the carriage just delivered both royals, end the game
+      if(G.pl[pid].royDone>=2){
+        G.chain=false; G.snm=false; G.sel=null; G.rch=new Set();
+        render();
+        endGame(pid);
+        return;
+      }
     }
     G.chain=false; G.snm=false; G.sel=null; G.rch=new Set();
     setTimeout(endTurn,pid===1?1200:500); return;
@@ -2325,6 +2849,7 @@ function ownRoyThreatened(pid){
 function isILife(pid,tok,dest){
   var opp=1-pid;
   if(tok.t==='archer'){return lbtg(dest).some(function(c){if(CAS.has(c))return false;var ot=G.pl[opp].bench.find(function(t){return !t.done&&t.cell===c;});if(!ot||ot.lives===null)return false;if(ROY.has(ot.t)&&isRoyProt(opp,c))return false;return ot.lives===1&&!(ot.t==='shield'&&ot.sUp);});}
+  if(tok.t==='longbow'){return lbtg2(dest).some(function(c){if(CAS.has(c))return false;var ot=G.pl[opp].bench.find(function(t){return !t.done&&t.cell===c;});if(!ot||ot.lives===null)return false;if(ROY.has(ot.t)&&isRoyProt(opp,c))return false;return ot.lives===1&&!(ot.t==='shield'&&ot.sUp);});}
   if(CAS.has(dest)&&tok.t!=='siege')return false;
   var ot=G.pl[opp].bench.find(function(t){return !t.done&&t.cell===dest;});
   if(!ot||ot.lives===null)return false;
@@ -2389,7 +2914,7 @@ function scD_cpump2(pid,tok,dest){
   // P2.5: Kill enemy Siege (2nd highest priority after ROY capture)
   if(isN&&isCap(pid,tok,dest)){
     var target=G.pl[opp].bench.find(function(t){return !t.done&&t.cell===dest;});
-    var lbTargets=tok.t==='archer'?lbtg(dest):[];
+    var lbTargets=tok.t==='archer'?lbtg(dest):tok.t==='longbow'?lbtg2(dest):[];
     var targetIsSiege=(target&&target.t==='siege')||lbTargets.some(function(c){
       var t=G.pl[opp].bench.find(function(x){return !x.done&&x.cell===c;});
       return t&&t.t==='siege';
@@ -2591,7 +3116,7 @@ function cpuCS(){
   );
   if(rc) return Object.assign({},rc,{reason:'royal'});
   const cc=cheap(
-    function(tok){return NROY.has(tok.t)&&tok.t!=='archer'&&tok.t!=='merchant';},
+    function(tok){return NROY.has(tok.t)&&tok.t!=='archer'&&tok.t!=='longbow'&&tok.t!=='merchant';},
     function(tok,d){if(CAS.has(d)&&tok.t!=='siege')return false;const ot=G.pl[opp].bench.find(t=>!t.done&&t.cell===d);if(!ot)return false;if(ROY.has(ot.t)&&isRoyProt(opp,d))return false;if(ot.t==='shield'&&ot.sUp)return false;return true;}
   );
   if(cc&&cc.coins<=2) return Object.assign({},cc,{reason:'cheap'});
@@ -2601,6 +3126,7 @@ function cpuCS(){
 function isCap(pid,tok,dest){
   const opp=1-pid; if(ROY.has(tok.t)||tok.t==='merchant') return false;
   if(tok.t==='archer') return lbtg(dest).some(function(c){if(CAS.has(c))return false;const ot=G.pl[opp].bench.find(t=>!t.done&&t.cell===c);if(!ot)return false;if(ROY.has(ot.t)&&isRoyProt(opp,c))return false;return!(ot.t==='shield'&&ot.sUp);});
+  if(tok.t==='longbow') return lbtg2(dest).some(function(c){if(CAS.has(c))return false;const ot=G.pl[opp].bench.find(t=>!t.done&&t.cell===c);if(!ot)return false;if(ROY.has(ot.t)&&isRoyProt(opp,c))return false;return!(ot.t==='shield'&&ot.sUp);});
   if(CAS.has(dest)&&tok.t!=='siege') return false;
   const ot=G.pl[opp].bench.find(t=>!t.done&&t.cell===dest); if(!ot) return false;
   if(ROY.has(ot.t)&&isRoyProt(opp,dest)) return false;
@@ -2609,6 +3135,7 @@ function isCap(pid,tok,dest){
 function isRCap(pid,tok,dest){
   const opp=1-pid; if(ROY.has(tok.t)||tok.t==='merchant') return false;
   if(tok.t==='archer') return lbtg(dest).some(function(c){if(CAS.has(c))return false;const ot=G.pl[opp].bench.find(t=>!t.done&&t.cell===c);return ot&&ROY.has(ot.t)&&!isRoyProt(opp,c)&&!(ot.t==='shield'&&ot.sUp);});
+  if(tok.t==='longbow') return lbtg2(dest).some(function(c){if(CAS.has(c))return false;const ot=G.pl[opp].bench.find(t=>!t.done&&t.cell===c);return ot&&ROY.has(ot.t)&&!isRoyProt(opp,c)&&!(ot.t==='shield'&&ot.sUp);});
   if(CAS.has(dest)&&tok.t!=='siege') return false;
   const ot=G.pl[opp].bench.find(t=>!t.done&&t.cell===dest); return!!ot&&ROY.has(ot.t)&&!isRoyProt(opp,dest);
 }
@@ -2642,6 +3169,28 @@ function cpuTurn(){
   if(G.p2human){setSt(p2lbl()+"'s Turn - Roll Dice",false);render();return;}
   G.busy=true;
   if(!G.chain){
+    // CPU Mercenary deploy: use if coins ≥ 2, mercenary on bench, empty castle exists, and castle placement is strategically useful
+    var cpuMerc=G.pl[1].bench.find(function(t){return t.t==='mercenary'&&!t.done&&t.cell<0&&(t.lives===null||t.lives>0)&&t.cd<=0;});
+    if(cpuMerc&&G.pl[1].coins>=2){
+      var emptyCastles=mercEmptyCastles();
+      if(emptyCastles.length>0){
+        // Pick castle closest to enemy (P1) units or closest to P1's finish (DP1)
+        var best=emptyCastles.reduce(function(a,b){return dtf(1,a)<dtf(1,b)?a:b;});
+        // Only deploy if it's reasonably useful (not too close to own start)
+        if(dtf(1,best)<dtf(1,G.pl[1].bench.filter(function(t){return !t.done&&t.cell>=0&&NROY.has(t.t);})[0]&&G.pl[1].bench.find(function(t){return !t.done&&t.cell>=0&&NROY.has(t.t);})?G.pl[1].bench.find(function(t){return !t.done&&t.cell>=0&&NROY.has(t.t);}).cell:999)||G.cpuTurnCount>5){
+          var m=p2lbl()+' deploys Mercenary to castle at '+CC[best]+'! (2💰)';
+          addH('cpu',m); setSt(m,false);
+          G.pl[1].coins-=2;
+          cpuMerc.cell=best;
+          cpuMerc.st.moves++;
+          SFX.capture();
+          G.busy=false;
+          render();
+          setTimeout(endTurn,1000);
+          return;
+        }
+      }
+    }
     const cs=cpump2CS(1);
     if(cs){
       const{tok,dest,coins,reason}=cs; G.pl[1].coins-=coins;
@@ -2768,7 +3317,7 @@ function endGame(pid){
 
 function showStatsScreen(pid){
   const won=pid===0;
-  const EMOJIS={knight:'🐴',shield:'🛡️',siege:'⚙️',thief:'🗡️',archer:'🏹',merchant:'🤠',sword:'⚔️',soldier:'🚶',king:'🤴',queen:'👸'};
+  const EMOJIS={knight:'🐴',shield:'🛡️',siege:'⚙️',thief:'🗡️',archer:'🏹',longbow:'🎯',mercenary:'🪓',merchant:'🤠',sword:'⚔️',soldier:'🚶',king:'🤴',queen:'👸',carriage:'🛒'};
   function tbl(plid,label,cls){
     let h='<div class="team-head '+cls+'">'+label+'</div>';
     h+='<table><thead><tr><th>Unit</th><th>Moves</th><th>Kills</th><th>Coins</th><th>Castles</th><th>Finishes</th><th>Deaths</th></tr></thead><tbody>';
@@ -2800,7 +3349,7 @@ function showStatsScreen(pid){
   var maxScore=Math.max.apply(null,candidates.map(heroScore));
   var tied=candidates.filter(function(t){return heroScore(t)===maxScore;});
   var hero=tied[Math.floor(Math.random()*tied.length)];
-  var EMOJIS2={knight:'🐴',shield:'🛡️',siege:'⚙️',thief:'🗡️',archer:'🏹',merchant:'🤠',sword:'⚔️',soldier:'🚶'};
+  var EMOJIS2={knight:'🐴',shield:'🛡️',siege:'⚙️',thief:'🗡️',archer:'🏹',longbow:'🎯',mercenary:'🪓',merchant:'🤠',sword:'⚔️',soldier:'🚶',carriage:'🛒'};
   var heroEmoji=EMOJIS2[hero.t]||'⚔️';
   var isDead=hero.lives!==null&&hero.lives<=0;
   var winKing=winPid===0?_p1K:_p2K;
@@ -2835,6 +3384,615 @@ function closeStats(){
   document.getElementById('stats-screen').style.display='none';
   newGame();
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// ONLINE MULTIPLAYER — Firebase Realtime Database
+// ═══════════════════════════════════════════════════════════════════
+
+var _onlineMode = false;      // true when playing online
+var _myPid = -1;              // 0 = P1 (host), 1 = P2 (joiner)
+var _roomCode = '';           // 6-char room code
+var _fbListener = null;       // active Firebase listener unsubscribe ref
+var _lastSyncedState = null;  // to avoid re-processing our own pushes
+var _waitingForOpponent = false;
+
+// ── Serialise / Deserialise game state ──────────────────────────
+
+function _serializeG(){
+  // Helper: replace undefined with null for Firebase compatibility
+  function nn(v){ return v === undefined ? null : v; }
+  var serial = {
+    turn: G.turn, phase: G.phase, roll: G.roll, d1: nn(G.d1), d2: nn(G.d2),
+    ift: G.ift, csa: G.csa, csm: G.csm, chain: G.chain,
+    cpuTurnCount: G.cpuTurnCount, p2human: G.p2human, hardMode: G.hardMode,
+    p1KingId: G.p1KingId, p2KingId: G.p2KingId,
+    sel: nn(G.sel), busy: false, anim: false, snm: G.snm, mercDeploy: G.mercDeploy||false,
+    hist: G.hist, hN: G.hN,
+    pl: G.pl.map(function(pl){
+      return {
+        id: pl.id, score: pl.score, royDone: pl.royDone, coins: pl.coins,
+        bench: pl.bench.map(function(t){
+          return {
+            id: t.id, t: t.t, l: t.l,
+            cell: nn(t.cell), sUp: nn(t.sUp), sBr: nn(t.sBr), done: t.done||false,
+            lives: nn(t.lives), cd: nn(t.cd)||0,
+            st:{
+              moves:  nn(t.st&&t.st.moves)||0,
+              kills:  nn(t.st&&t.st.kills)||0,
+              coins:  nn(t.st&&t.st.coins)||0,
+              castles:nn(t.st&&t.st.castles)||0,
+              finishes:nn(t.st&&t.st.finishes)||0,
+              deaths: nn(t.st&&t.st.deaths)||0
+            }
+          };
+        })
+      };
+    }),
+    bandit: {
+      cell: nn(G_BANDIT.cell), roundsUntilSpawn: nn(G_BANDIT.roundsUntilSpawn),
+      alive: G_BANDIT.alive||false, destroyed: G_BANDIT.destroyed||false,
+      dormant: G_BANDIT.dormant||false, dormancyCounter: G_BANDIT.dormancyCounter||0
+    },
+    mapId: _selectedMapId||'tkr',
+    royalPlayOrder: _royalPlayOrder||null,
+    royalPlayIdx: nn(_royalPlayIdx),
+    _seq: (_lastSyncedState && _lastSyncedState._seq ? _lastSyncedState._seq : 0) + 1
+  };
+  return serial;
+}
+
+function _deserializeG(data){
+  // Restore G from serialised Firebase data
+  if(!data) return;
+  // Load map if it changed
+  if(data.mapId && data.mapId !== (_selectedMapId||'tkr')){
+    _selectedMapId = data.mapId;
+    loadMap(_selectedMapId);
+  }
+  // Restore treeSqs Map from current G (host generated, joiner mirrors after first sync)
+  var treeData = G.treeSqs || new Map();
+  G.turn = data.turn; G.phase = data.phase; G.roll = data.roll;
+  G.d1 = data.d1; G.d2 = data.d2; G.ift = data.ift;
+  G.csa = data.csa; G.csm = data.csm; G.chain = data.chain;
+  G.cpuTurnCount = data.cpuTurnCount; G.p2human = true; // always human in online
+  G.hardMode = data.hardMode||false;
+  G.p1KingId = data.p1KingId; G.p2KingId = data.p2KingId;
+  G.sel = data.sel; G.busy = false; G.anim = false;
+  G.snm = data.snm; G.mercDeploy = data.mercDeploy||false;
+  G.hist = data.hist||[]; G.hN = data.hN||0;
+  G.treeSqs = treeData;
+  G.rch = new Set();
+  G.pl = data.pl.map(function(pl){
+    return {
+      id: pl.id, score: pl.score, royDone: pl.royDone, coins: pl.coins,
+      bench: pl.bench.map(function(t){
+        var unitDef = UNITS.find(function(u){return u.t===t.t;})||{};
+        return {
+          id:t.id, t:t.t, l:t.l, f:unitDef.f||function(){return '';},
+          cell:t.cell, sUp:t.sUp, sBr:t.sBr, done:t.done,
+          lives:t.lives, cd:t.cd, st:t.st
+        };
+      })
+    };
+  });
+  if(data.bandit){
+    G_BANDIT.cell = data.bandit.cell;
+    G_BANDIT.roundsUntilSpawn = data.bandit.roundsUntilSpawn;
+    G_BANDIT.alive = data.bandit.alive;
+    G_BANDIT.destroyed = data.bandit.destroyed;
+    G_BANDIT.dormant = data.bandit.dormant;
+    G_BANDIT.dormancyCounter = data.bandit.dormancyCounter;
+  }
+  if(data.royalPlayOrder) _royalPlayOrder = data.royalPlayOrder;
+  if(data.royalPlayIdx !== undefined) _royalPlayIdx = data.royalPlayIdx;
+}
+
+// ── Room code generation ─────────────────────────────────────────
+
+function _genRoomCode(){
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no O/0, I/1
+  var code = '';
+  for(var i=0;i<6;i++) code += chars[Math.floor(Math.random()*chars.length)];
+  return code;
+}
+
+// ── Firebase helpers (wait until module ready) ───────────────────
+
+function _fbWrap(fn){
+  if(window._fbReady){ fn(); }
+  else { window.addEventListener('firebase-ready', fn, {once:true}); }
+}
+
+// ── Lobby UI ─────────────────────────────────────────────────────
+
+function openOnlineLobby(){
+  if(!window._fbReady && !window._fbDb){
+    // Firebase not configured yet — show helpful message
+    alert('Firebase is not configured yet.\n\nTo enable online play, open the HTML file and replace the Firebase config near the top with your own project credentials from console.firebase.google.com.\n\nSee the comments in the code for instructions.');
+    return;
+  }
+  document.getElementById('mode-modal').classList.remove('show');
+  document.getElementById('online-modal').classList.add('show');
+  _showMainLobbyBtns();
+}
+
+function _showMainLobbyBtns(){
+  document.getElementById('ob-main-btns').style.display='';
+  document.getElementById('ob-room-section').style.display='none';
+}
+
+function closeOnlineLobby(){
+  document.getElementById('online-modal').classList.remove('show');
+  document.getElementById('mode-modal').classList.add('show');
+}
+
+function onlineShowJoin(){
+  document.getElementById('ob-main-btns').style.display='none';
+  document.getElementById('ob-room-section').style.display='';
+  document.getElementById('ob-status').textContent='Enter the room code your opponent shared:';
+  document.getElementById('ob-room-code-display').style.display='none';
+  document.getElementById('ob-copy-hint').style.display='none';
+  document.getElementById('ob-room-input').style.display='';
+  document.getElementById('ob-room-input').value='';
+  document.getElementById('ob-action-btn').style.display='';
+  document.getElementById('ob-action-btn').textContent='Join Game';
+}
+
+function onlineCancelLobby(){
+  _onlineCleanup();
+  _showMainLobbyBtns();
+}
+
+function obCopyCode(){
+  if(!_roomCode) return;
+  navigator.clipboard.writeText(_roomCode).then(function(){
+    document.getElementById('ob-copy-hint').textContent='✅ Copied!';
+    setTimeout(function(){document.getElementById('ob-copy-hint').textContent='📋 Click code to copy & share with your opponent';},1800);
+  }).catch(function(){
+    // Fallback
+    var el=document.getElementById('ob-room-code-display');
+    var range=document.createRange(); range.selectNode(el);
+    window.getSelection().removeAllRanges(); window.getSelection().addRange(range);
+  });
+}
+
+// ── Create room (host = P1) ──────────────────────────────────────
+
+function onlineCreate(){
+  _fbWrap(function(){
+    document.getElementById('ob-main-btns').style.display='none';
+    document.getElementById('ob-room-section').style.display='';
+    document.getElementById('ob-status').textContent='Generating room…';
+    document.getElementById('ob-room-code-display').style.display='none';
+    document.getElementById('ob-copy-hint').style.display='none';
+    document.getElementById('ob-room-input').style.display='none';
+    document.getElementById('ob-action-btn').style.display='none';
+
+    _roomCode = _genRoomCode();
+    _myPid = 0;
+    _onlineMode = true;
+    _waitingForOpponent = true;
+
+    var roomRef = window._fbRef(window._fbDb, 'rooms/'+_roomCode);
+    window._fbSet(roomRef, {
+      status: 'waiting',
+      host: 'p1',
+      createdAt: Date.now()
+    }).then(function(){
+      document.getElementById('ob-room-code-display').textContent = _roomCode;
+      document.getElementById('ob-room-code-display').style.display='';
+      document.getElementById('ob-copy-hint').style.display='';
+      document.getElementById('ob-status').textContent='⏳ Waiting for opponent to join…';
+
+      // Listen for P2 joining — use a flag so we only trigger once
+      var _hostSetupTriggered = false;
+      _fbListener = window._fbOnValue(roomRef, function(snapshot){
+        var data = snapshot.val();
+        if(!data){ _onlineCleanup(); return; }
+        // P2 joined — kick off setup exactly once
+        if((data.status === 'joined') && _waitingForOpponent && !_hostSetupTriggered){
+          _hostSetupTriggered = true;
+          _waitingForOpponent = false;
+          _onlineHostSetup();
+        }
+        // Incoming game state (opponent's moves after game starts) — only if we didn't push it
+        if(data.status === 'in_game' && data.gameState){
+          _onlineReceiveState(data.gameState);
+        }
+      });
+
+      // Auto-cleanup stale rooms after 10 minutes
+      setTimeout(function(){
+        if(_waitingForOpponent && _onlineMode){
+          _onlineCleanup();
+          document.getElementById('ob-status').textContent='Room expired. Please try again.';
+        }
+      }, 600000);
+    }).catch(function(err){
+      document.getElementById('ob-status').textContent='Error: '+err.message;
+    });
+  });
+}
+
+// ── Join room (joiner = P2) ──────────────────────────────────────
+
+function onlineJoinRoom(){
+  var code = (document.getElementById('ob-room-input').value||'').trim().toUpperCase();
+  if(code.length!==6){ document.getElementById('ob-status').textContent='Please enter a 6-character room code.'; return; }
+  _fbWrap(function(){
+    document.getElementById('ob-status').textContent='Connecting…';
+    document.getElementById('ob-action-btn').disabled=true;
+    var roomRef = window._fbRef(window._fbDb, 'rooms/'+code);
+    window._fbGet(roomRef).then(function(snapshot){
+      var data = snapshot.val();
+      if(!data){ document.getElementById('ob-status').textContent='Room not found. Check the code and try again.'; document.getElementById('ob-action-btn').disabled=false; return; }
+      if(data.status !== 'waiting'){ document.getElementById('ob-status').textContent='Game already started or room is full.'; document.getElementById('ob-action-btn').disabled=false; return; }
+
+      _roomCode = code;
+      _myPid = 1;
+      _onlineMode = true;
+      document.getElementById('ob-room-input').style.display='none';
+      document.getElementById('ob-action-btn').style.display='none';
+      document.getElementById('ob-room-code-display').textContent = _roomCode;
+      document.getElementById('ob-room-code-display').style.display='';
+      document.getElementById('ob-status').textContent='✅ Joined! Waiting for host to start…';
+
+      // Signal host that P2 joined
+      window._fbUpdate(roomRef, {status:'joined'});
+
+      // Listen for game state pushes from host
+      _p2GameStarted = false;
+      var _p2LastSeenSeq = 0;
+      _fbListener = window._fbOnValue(roomRef, function(snapshot){
+        var data = snapshot.val();
+        console.log('[P2 listener fired] status:', data && data.status, 'seq:', data && data.gameState && data.gameState._seq, '_p2GameStarted:', _p2GameStarted, '_onlineMode:', _onlineMode);
+        if(!data || !data.gameState) return;
+        var seq = data.gameState._seq;
+        if(seq <= _p2LastSeenSeq) return;
+        // Skip our own push echoes
+        if(_lastSyncedState && seq === _lastSyncedState._seq) { _p2LastSeenSeq = seq; return; }
+        _p2LastSeenSeq = seq;
+        if(data.status === 'in_game'){
+          if(!_p2GameStarted){
+            _p2GameStarted = true;
+          }
+          _onlineReceiveState(data.gameState);
+        }
+      });
+    }).catch(function(err){
+      document.getElementById('ob-status').textContent='Error: '+err.message;
+      document.getElementById('ob-action-btn').disabled=false;
+    });
+  });
+}
+
+// ── Host begins game setup after P2 joins ───────────────────────
+
+function _onlineHostSetup(){
+  // Stop listening during setup — we'll re-attach after game starts
+  if(_fbListener){ try{ _fbListener(); }catch(e){} _fbListener=null; }
+
+  // Close ALL modals cleanly before opening king selection
+  document.getElementById('online-modal').classList.remove('show');
+  document.getElementById('ob-status').textContent='Opponent joined! Setting up game…';
+
+  _pendingP2h = true;
+  _pendingHard = false;
+  _p1K = null; _p2K = null;
+
+  // Small delay to let modal close before opening king picker
+  setTimeout(function(){
+    showKingP1(function(k1){
+      _p1K = k1;
+      // In online mode, host picks both kingdoms (P2 plays with what host assigns)
+      // Show P2 kingdom picker labeled for online
+      document.getElementById('king-title').textContent='⚜ CHOOSE OPPONENT\'S KINGDOM ⚜';
+      document.getElementById('king-sub').textContent='Pick the kingdom your opponent will play';
+      document.getElementById('king-cpu-msg').textContent='';
+      var c=document.getElementById('king-btns');
+      c.innerHTML='';
+      KINGDOMS.forEach(function(k){
+        var dis=k.id===_p1K.id;
+        var b=document.createElement('button');
+        b.className='king-btn'+(dis?' kdisabled':'');
+        b.innerHTML='<div class="king-swatch" style="background:'+k.bg+';border-color:'+k.stroke+'">👑</div><div><div class="king-name">'+k.name+'</div><div class="king-bonus">'+k.bonus+'</div></div>';
+        if(!dis) b.onclick=function(){
+          document.getElementById('king-modal').classList.remove('show');
+          _p2K=k;
+          showMapSelect(function(){
+            G.p2human = true;
+            G.hardMode = false;
+            G.p1KingId = _p1K ? _p1K.id : '';
+            G.p2KingId = _p2K ? _p2K.id : '';
+            _pendingFt = Math.random()<0.5?0:1;
+            var heads = _pendingFt===0;
+            var wKing = _pendingFt===0?_p1K:_p2K;
+            var winner = wKing?wKing.name:(_pendingFt===0?'P1':'P2');
+            var modal=document.getElementById('coin-modal');
+            var emoji=document.getElementById('coin-emoji');
+            var result=document.getElementById('coin-result');
+            var goBtn=document.getElementById('coin-go');
+            result.textContent=''; goBtn.style.display='none';
+            emoji.textContent='🪙'; emoji.classList.remove('flip');
+            modal.classList.add('show');
+            setTimeout(function(){ emoji.textContent='🪙'; emoji.classList.add('flip'); },50);
+            setTimeout(function(){
+              emoji.classList.remove('flip');
+              var wk=heads?_p1K:_p2K;
+              var wbg=wk?wk.bg:'#A8C4E0', wst=wk?wk.stroke:'#4A7AAA';
+              emoji.innerHTML='<div style="width:64px;height:64px;border-radius:50%;background:'+wbg+';border:3px solid '+wst+';display:flex;align-items:center;justify-content:center;font-size:32px">👑</div>';
+              result.textContent=(heads?'Heads! ':'Tails! ')+winner+' goes first!';
+              goBtn.style.display='inline-block';
+            },1500);
+            // Override coinDismiss for online to push initial state
+            document.getElementById('coin-go').onclick = function(){
+              document.getElementById('coin-modal').classList.remove('show');
+              hideSplashBg();
+              _onlineStartGame(_pendingFt);
+            };
+          });
+        };
+        c.appendChild(b);
+      });
+      document.getElementById('king-modal').classList.add('show');
+    });
+  }, 150);
+}
+
+// ── Start game in online mode (host) ────────────────────────────
+
+function _onlineStartGame(ft){
+  console.log('[HOST] _onlineStartGame called, ft:', ft, 'roomCode:', _roomCode);
+  _startGame(ft);
+  // Re-attach listener for opponent's future moves only
+  var roomRef = window._fbRef(window._fbDb, 'rooms/'+_roomCode);
+  if(_fbListener){ try{ _fbListener(); }catch(e){} }
+  var _lastSeenSeq = 0;
+  _fbListener = window._fbOnValue(roomRef, function(snapshot){
+    var data = snapshot.val();
+    console.log('[HOST listener] status:', data && data.status, 'seq:', data && data.gameState && data.gameState._seq, 'lastSeenSeq:', _lastSeenSeq);
+    if(!data || !data.gameState) return;
+    // Only process state pushed BY P2 (seq we haven't seen AND didn't push ourselves)
+    var seq = data.gameState._seq;
+    if(seq <= _lastSeenSeq) return;
+    // If this seq matches what we just pushed, it's our own echo — skip it
+    if(_lastSyncedState && seq === _lastSyncedState._seq) { _lastSeenSeq = seq; return; }
+    _lastSeenSeq = seq;
+    if(data.status === 'in_game'){
+      _onlineReceiveState(data.gameState);
+    }
+  });
+  // Push initial state to Firebase so P2 gets the board
+  setTimeout(function(){
+    console.log('[HOST] About to push initial state, _onlineMode:', _onlineMode, '_roomCode:', _roomCode);
+    _onlinePushState();
+  }, 300);
+  _showNetIndicator();
+}
+
+// ── Push current state to Firebase (called after every local move) ──
+
+function _onlinePushState(){
+  if(!_onlineMode || !_roomCode) return;
+  var serial = _serializeG();
+  // Seq: always increment from last known seq regardless of who set it
+  serial._seq = (_lastSyncedState ? _lastSyncedState._seq : 0) + 1;
+  _lastSyncedState = serial;
+  console.log('[PUSH] seq:', serial._seq, 'turn:', serial.turn, 'phase:', serial.phase, 'myPid:', _myPid);
+  var roomRef = window._fbRef(window._fbDb, 'rooms/'+_roomCode);
+  window._fbUpdate(roomRef, {status:'in_game', gameState: serial}).then(function(){
+    console.log('[PUSH] succeeded seq:', serial._seq);
+  }).catch(function(err){
+    console.warn('[PUSH] Firebase error:', err);
+  });
+}
+
+// ── Receive state from Firebase (called on opponent's move) ──────
+
+var _processingRemote = false;
+var _p2GameStarted = false;
+var _lastAppliedSeq = 0;
+function _onlineReceiveState(data){
+  console.log('[RECEIVE] seq:', data && data._seq, 'lastApplied:', _lastAppliedSeq, 'myPid:', _myPid, '_onlineMode:', _onlineMode);
+  if(!data || !_onlineMode) return;
+  // Skip if we already applied this seq
+  if(data._seq <= _lastAppliedSeq) { console.log('[RECEIVE] skipped - old or same seq'); return; }
+  _lastAppliedSeq = data._seq;
+  // Also update _lastSyncedState so our next push increments correctly
+  _lastSyncedState = data;
+  _processingRemote = true;
+
+  // First time P2 receives state — need to build the full DOM
+  var firstTime = (_myPid === 1 && (G.phase === 'idle' || G.pl[0].bench.length === 0));
+  if(firstTime){
+    // Restore king globals from data so P2 renders kingdom colours correctly
+    if(data.p1KingId) _p1K = KINGDOMS.find(function(k){return k.id===data.p1KingId;})||null;
+    if(data.p2KingId) _p2K = KINGDOMS.find(function(k){return k.id===data.p2KingId;})||null;
+
+    // Set up map before deserializing
+    if(data.mapId){
+      _selectedMapId = data.mapId;
+      loadMap(_selectedMapId);
+    }
+    // Generate treeSqs locally for P2 (gameplay-identical, visually similar)
+    var blankSqs2=[];
+    for(var bi=0;bi<ROWS*COLS;bi++){if(CT[bi]==='blank')blankSqs2.push(bi);}
+    var treeSqs2=new Map();
+    var ACCENTS2=[{e:'🪨',p:0.15},{e:'🍄',p:0.10},{e:'🪵',p:0.10},{e:'🌿',p:0.08},{e:'🐺',p:0.04},{e:'🦌',p:0.04},{e:'🐗',p:0.04},{e:'🐇',p:0.04},{e:'🦉',p:0.04}];
+    function makeSlots2(){var s=[];for(var rr=0;rr<3;rr++)for(var cc=0;cc<3;cc++)s.push({dx:(cc-1)*33+Math.floor(Math.random()*14)-7,dy:(rr-1)*33+Math.floor(Math.random()*14)-7});for(var ii=s.length-1;ii>0;ii--){var jj=Math.floor(Math.random()*(ii+1));var tmp=s[ii];s[ii]=s[jj];s[jj]=tmp;}return s;}
+    blankSqs2.forEach(function(idx2){
+      var slots2=makeSlots2(),slotIdx2=0,items2=[],r2=Math.random();
+      var tc2=r2<0.08?4:r2<0.35?5:r2<0.75?6:7;
+      for(var tt=0;tt<tc2&&slotIdx2<slots2.length;tt++,slotIdx2++)items2.push({e:'🌲',dx:slots2[slotIdx2].dx,dy:slots2[slotIdx2].dy,sz:(function(){var rr2=Math.random();return rr2<0.5?Math.floor(Math.random()*3)+10:rr2<0.8?Math.floor(Math.random()*3)+14:Math.floor(Math.random()*4)+18;}())});
+      ACCENTS2.forEach(function(a){if(slotIdx2<slots2.length&&Math.random()<a.p){items2.push({e:a.e,dx:slots2[slotIdx2].dx,dy:slots2[slotIdx2].dy,sz:(function(){var rr2=Math.random();return rr2<0.5?Math.floor(Math.random()*3)+9:rr2<0.8?Math.floor(Math.random()*3)+13:Math.floor(Math.random()*3)+17;}())});slotIdx2++;}});
+      treeSqs2.set(idx2,items2);
+    });
+    // Init bare G then deserialize from host state
+    G={turn:0,phase:'idle',roll:0,d1:null,d2:null,treeSqs:treeSqs2,ift:true,csa:1,csm:false,chain:false,cpuTurnCount:0,p2human:true,hardMode:false,p1KingId:'',p2KingId:'',sel:null,rch:new Set(),busy:false,anim:false,snm:false,mercDeploy:false,hist:[],hN:0,pl:[{id:0,score:0,royDone:0,coins:0,bench:[]},{id:1,score:0,royDone:0,coins:0,bench:[]}]};
+    G_BANDIT={cell:-1,roundsUntilSpawn:2,alive:false,destroyed:false,dormant:false,dormancyCounter:0};
+    _deserializeG(data);
+    buildDOM();
+    document.getElementById('online-modal').classList.remove('show');
+    hideSplashBg();
+    _showNetIndicator();
+  } else {
+    _deserializeG(data);
+  }
+
+  // Rebuild reach set for the current player if in select phase
+  if(G.phase==='select' && G.sel){
+    var tok=fTok(G.sel);
+    if(tok) G.rch=gtok(G.turn,tok,G.roll);
+  }
+
+  render();
+  _updateOnlineTurnUI();
+  _processingRemote = false;
+}
+
+// ── Patch: intercept state-mutating game functions to push after ──
+
+// We hook into endTurn, applyMove, confirmCS to push state after local mutations.
+// The cleanest hook point is endTurn since all paths through the game go through it.
+var _origEndTurn = null;
+var _origApplyMove = null;
+var _origConfirmCS = null;
+
+function _patchOnlineFunctions(){
+  // Patch endTurn
+  if(typeof endTurn === 'function' && !_origEndTurn){
+    _origEndTurn = endTurn;
+    endTurn = function(){
+      var wasMyTurn = _isMyTurn();
+      console.log('[PATCH endTurn] wasMyTurn:', wasMyTurn, '_processingRemote:', _processingRemote, '_onlineMode:', _onlineMode, 'G.turn:', G.turn, '_myPid:', _myPid);
+      _origEndTurn.apply(this, arguments);
+      if(_onlineMode && !_processingRemote && wasMyTurn){
+        console.log('[PATCH endTurn] → pushing state');
+        setTimeout(_onlinePushState, 50);
+      }
+    };
+  }
+  // Patch applyMove
+  if(typeof applyMove === 'function' && !_origApplyMove){
+    _origApplyMove = applyMove;
+    applyMove = function(){
+      var wasMyTurn = _isMyTurn();
+      console.log('[PATCH applyMove] wasMyTurn:', wasMyTurn, '_processingRemote:', _processingRemote, '_onlineMode:', _onlineMode, 'G.turn:', G.turn, '_myPid:', _myPid);
+      _origApplyMove.apply(this, arguments);
+      if(_onlineMode && !_processingRemote && wasMyTurn){
+        console.log('[PATCH applyMove] → pushing state');
+        setTimeout(_onlinePushState, 80);
+      }
+    };
+  }
+  // Patch confirmCS (coin spend)
+  if(typeof confirmCS === 'function' && !_origConfirmCS){
+    _origConfirmCS = confirmCS;
+    confirmCS = function(){
+      var wasMyTurn = _isMyTurn();
+      _origConfirmCS.apply(this, arguments);
+      if(_onlineMode && !_processingRemote && wasMyTurn){
+        setTimeout(_onlinePushState, 80);
+      }
+    };
+  }
+}
+
+// ── Turn guard: disable controls when it's not your turn ─────────
+
+function _isMyTurn(){
+  if(!_onlineMode) return true;
+  return G.turn === _myPid;
+}
+
+function _updateOnlineTurnUI(){
+  if(!_onlineMode) return;
+  var isMyTurn = _isMyTurn();
+  var rollBtn = document.getElementById('btn-roll');
+  var cogBtn = document.getElementById('btn-cog');
+  if(rollBtn){
+    if(!isMyTurn){
+      rollBtn.disabled = true;
+      rollBtn.title = "Waiting for opponent…";
+    } else {
+      rollBtn.title = "";
+      // Only re-enable if game logic says it's rollable
+      if(G.phase==='roll' && !G.anim && !G.csm){
+        rollBtn.disabled = false;
+      }
+    }
+  }
+  if(cogBtn && !isMyTurn) cogBtn.disabled = true;
+
+  // Show whose turn it is in the status area
+  var netInd = document.getElementById('net-indicator');
+  if(netInd){
+    netInd.textContent = isMyTurn ? '🌐 Your turn' : '🌐 Opponent\'s turn';
+    netInd.classList.add('show');
+  }
+}
+
+// Patch the roll() function to guard against acting out of turn
+var _origRoll = null;
+function _patchRoll(){
+  if(typeof roll==='function' && !_origRoll){
+    _origRoll = roll;
+    roll = function(){
+      if(_onlineMode && !_isMyTurn()){
+        setSt("It's your opponent's turn — please wait.",false);
+        return;
+      }
+      _origRoll.apply(this,arguments);
+    };
+  }
+}
+
+// Patch selTok similarly
+var _origSelTok = null;
+function _patchSelTok(){
+  if(typeof selTok==='function' && !_origSelTok){
+    _origSelTok = selTok;
+    selTok = function(id){
+      if(_onlineMode && !_isMyTurn()){
+        setSt("It's your opponent's turn — please wait.",false);
+        return;
+      }
+      _origSelTok.apply(this,arguments);
+    };
+  }
+}
+
+// ── Net indicator ────────────────────────────────────────────────
+
+function _showNetIndicator(){
+  var el = document.getElementById('net-indicator');
+  if(el) el.classList.add('show');
+}
+
+// ── Cleanup ──────────────────────────────────────────────────────
+
+function _onlineCleanup(){
+  _onlineMode = false;
+  _myPid = -1;
+  _waitingForOpponent = false;
+  if(_fbListener){
+    // Firebase v10 modular: onValue returns unsubscribe fn
+    try{ _fbListener(); }catch(e){}
+    _fbListener = null;
+  }
+  _roomCode = '';
+  _lastSyncedState = null;
+  var netInd = document.getElementById('net-indicator');
+  if(netInd) netInd.classList.remove('show');
+}
+
+// ── Apply patches once DOM is ready ─────────────────────────────
+document.addEventListener('DOMContentLoaded', function(){
+  _patchOnlineFunctions();
+  _patchRoll();
+  _patchSelTok();
+});
+
 
 // Start on load
 window.addEventListener('load', function(){
