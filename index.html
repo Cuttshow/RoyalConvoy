@@ -309,6 +309,11 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
       <div class="map-icon">🗺</div>
       <div><div class="map-name">Stone's Throw</div><div class="map-desc">Compact map. Each player has unique advantages early. Units can reach their tourney without crossing paths with the enemy. Bandits lurk near the tourney!</div></div>
     </button>
+    <div style="margin:8px 0"></div>
+    <button class="map-btn" onclick="selectMap('map6')">
+      <div class="map-icon">🗺</div>
+      <div><div class="map-name">Brisk Journey</div><div class="map-desc">A short, quick map. Utilize the Royal Carriage to whisk your royals to the tourney.  Beware your enemy's longbow!</div></div>
+    </button>
   </div>
 </div>
 <div id="king-modal">
@@ -353,6 +358,20 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
   </div>
 </div>
 
+<div id="testdice-modal" style="display:none;position:fixed;bottom:128px;left:50%;transform:translateX(-50%);z-index:210;background:#F5EDD6;border:2px solid #6A4A9A;border-radius:8px;padding:8px 10px;text-align:center;box-shadow:0 -3px 14px rgba(60,32,8,0.25);white-space:nowrap">
+  <div style="font-family:Georgia,serif;font-size:9px;font-weight:700;color:#6A4A9A;margin-bottom:6px;letter-spacing:1px">🎲 CHOOSE ROLL</div>
+  <div style="display:flex;gap:5px">
+    <button onclick="pickTestDice(1)" style="width:30px;height:30px;border-radius:5px;border:2px solid #6A4A9A;background:#F5EDD6;font-family:Georgia,serif;font-size:14px;font-weight:700;color:#3A2808;cursor:pointer;padding:0">1</button>
+    <button onclick="pickTestDice(2)" style="width:30px;height:30px;border-radius:5px;border:2px solid #6A4A9A;background:#F5EDD6;font-family:Georgia,serif;font-size:14px;font-weight:700;color:#3A2808;cursor:pointer;padding:0">2</button>
+    <button onclick="pickTestDice(3)" style="width:30px;height:30px;border-radius:5px;border:2px solid #6A4A9A;background:#F5EDD6;font-family:Georgia,serif;font-size:14px;font-weight:700;color:#3A2808;cursor:pointer;padding:0">3</button>
+    <button onclick="pickTestDice(4)" style="width:30px;height:30px;border-radius:5px;border:2px solid #6A4A9A;background:#F5EDD6;font-family:Georgia,serif;font-size:14px;font-weight:700;color:#3A2808;cursor:pointer;padding:0">4</button>
+    <button onclick="pickTestDice(5)" style="width:30px;height:30px;border-radius:5px;border:2px solid #6A4A9A;background:#F5EDD6;font-family:Georgia,serif;font-size:14px;font-weight:700;color:#3A2808;cursor:pointer;padding:0">5</button>
+    <button onclick="pickTestDice(6)" style="width:30px;height:30px;border-radius:5px;border:2px solid #6A4A9A;background:#F5EDD6;font-family:Georgia,serif;font-size:14px;font-weight:700;color:#3A2808;cursor:pointer;padding:0">6</button>
+    <button onclick="pickTestDice(7)" style="width:30px;height:30px;border-radius:5px;border:2px solid #6A4A9A;background:#F5EDD6;font-family:Georgia,serif;font-size:14px;font-weight:700;color:#3A2808;cursor:pointer;padding:0">7</button>
+    <button onclick="pickTestDice(8)" style="width:30px;height:30px;border-radius:5px;border:2px solid #6A4A9A;background:#F5EDD6;font-family:Georgia,serif;font-size:14px;font-weight:700;color:#3A2808;cursor:pointer;padding:0">8</button>
+  </div>
+</div>
+
 <div id="splash-modal" class="show">
   <img id="splash-img" src="https://raw.githubusercontent.com/Cuttshow/Splash/refs/heads/main/IMG_3706.JPG" onload="this.classList.add('loaded')" alt="Royal Convoy"/>
   <button id="splash-btn">⚔ Begin Your Journey ⚔</button>
@@ -379,6 +398,44 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
 /* Connection indicator */
 #net-indicator{position:fixed;bottom:8px;right:10px;font-size:10px;color:#8A6030;z-index:999;pointer-events:none;opacity:0;transition:opacity .4s}
 #net-indicator.show{opacity:1}
+
+/* ── Daily Challenge Styles ── */
+#daily-modal,#daily-played-modal,#daily-leaderboard-modal,#daily-name-modal{
+  display:none;position:fixed;inset:0;background:rgba(60,32,8,.82);z-index:210;align-items:center;justify-content:center}
+#daily-modal.show,#daily-played-modal.show,#daily-leaderboard-modal.show,#daily-name-modal.show{display:flex}
+.daily-box{background:#F5EDD6;border:2px solid #A07820;border-radius:10px;padding:28px 32px;max-width:420px;width:94%;text-align:center;font-family:Georgia,serif}
+.daily-box h2{font-size:17px;font-weight:700;color:#5C3D0A;letter-spacing:1.5px;margin-bottom:6px}
+.daily-box .daily-sub{font-size:11px;color:#8A6030;margin-bottom:16px;line-height:1.6}
+.daily-map-card{background:linear-gradient(135deg,#EDD8A0,#F5EDD6);border:2px solid #C8A030;border-radius:8px;padding:14px 16px;margin:14px 0;text-align:left}
+.daily-map-card h3{font-family:Georgia,serif;font-size:14px;font-weight:700;color:#3A2808;margin-bottom:4px}
+.daily-map-card p{font-family:Georgia,serif;font-size:11px;color:#7A5010;margin:0}
+.daily-date-badge{display:inline-block;background:#5C3D0A;color:#F5EDD6;font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;letter-spacing:1px;margin-bottom:12px}
+.daily-btn{display:block;width:100%;padding:11px 0;margin-bottom:8px;border-radius:6px;border:1.5px solid #A07820;background:#5C3D0A;color:#F5EDD6;font-size:13px;font-weight:700;font-family:Georgia,serif;cursor:pointer;letter-spacing:.5px}
+.daily-btn:hover{background:#3A2808}
+.daily-btn.sec{background:#F5EDD6;color:#5C3D0A}
+.daily-btn.sec:hover{background:#EAD8B0}
+.daily-btn:last-child{margin-bottom:0}
+#daily-name-input{width:100%;padding:10px 12px;border-radius:6px;border:1.5px solid #A07820;background:#FFF8EC;font-size:16px;font-family:Georgia,serif;color:#5C3D0A;text-align:center;margin-bottom:14px;box-sizing:border-box}
+#daily-name-input::placeholder{color:#C4A870}
+.lb-table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11px}
+.lb-table thead tr{background:#5C3D0A}
+.lb-table th{padding:6px 8px;text-align:center;font-weight:700;color:#F5EDD6;font-family:Georgia,serif;font-size:10px}
+.lb-table th:first-child{text-align:left}
+.lb-table td{padding:5px 8px;border-bottom:.5px solid #E8D8A0;text-align:center;color:#3A2808;font-family:Georgia,serif}
+.lb-table td:first-child{text-align:left;font-weight:700}
+.lb-table tr:last-child td{border-bottom:none}
+.lb-table tr:nth-child(even){background:#FAF0E0}
+.lb-table .me td{background:#EDD8A0;font-weight:700}
+.lb-table .rank-gold{color:#B08010;font-weight:700;font-size:14px}
+.lb-table .rank-silver{color:#808080;font-weight:700;font-size:13px}
+.lb-table .rank-bronze{color:#A0520A;font-weight:700;font-size:13px}
+.daily-result-box{background:#EDD8A0;border:2px solid #C8A030;border-radius:8px;padding:12px 16px;margin:10px 0;font-family:Georgia,serif}
+.daily-result-box .res-score{font-size:28px;font-weight:700;color:#5C3D0A}
+.daily-result-box .res-label{font-size:11px;color:#8A6030;margin-top:2px}
+.daily-indicator{position:fixed;top:8px;right:10px;font-size:10px;font-family:Georgia,serif;color:#5C3D0A;background:#EDD8A0;border:1px solid #C4A050;border-radius:10px;padding:3px 8px;z-index:50;display:none}
+.daily-indicator.show{display:block}
+#daily-saved-banner{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#5C3D0A;color:#F5EDD6;font-family:Georgia,serif;font-size:14px;font-weight:700;padding:14px 28px;border-radius:8px;border:2px solid #C8A030;z-index:300;pointer-events:none;white-space:nowrap;letter-spacing:1px;text-align:center}
+#daily-saved-banner.show{display:block}
 </style>
 
 <div id="online-modal">
@@ -403,6 +460,67 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
 
 <div id="net-indicator">🌐 Online</div>
 
+<!-- ── Daily Challenge: Name Entry ── -->
+<div id="daily-name-modal">
+  <div class="daily-box">
+    <h2>📅 DAILY MAP CHALLENGE</h2>
+    <div class="daily-sub">Enter your name to join today's leaderboard. Your results will be visible to all players.</div>
+    <input id="daily-name-input" type="text" maxlength="20" placeholder="Your name…" oninput="this.value=this.value.replace(/[^a-zA-Z0-9 \-_']/g,'')"/>
+    <button class="daily-btn" onclick="confirmDailyName()">⚔ Continue</button>
+    <button class="daily-btn sec" onclick="closeDailyName()">✕ Back</button>
+  </div>
+</div>
+
+<!-- ── Daily Challenge: Info & Start ── -->
+<div id="daily-modal">
+  <div class="daily-box">
+    <h2>📅 DAILY MAP CHALLENGE</h2>
+    <div id="daily-date-badge" class="daily-date-badge"></div>
+    <div class="daily-sub">One attempt only. Win in as few turns as possible to top the leaderboard!</div>
+    <div class="daily-map-card">
+      <h3 id="daily-map-name"></h3>
+      <p id="daily-map-desc"></p>
+    </div>
+    <div class="daily-sub" style="margin-top:8px;margin-bottom:4px">Playing as: <strong id="daily-player-name-display" style="color:#5C3D0A"></strong></div>
+    <button class="daily-btn" onclick="startDailyChallenge()">⚔ Begin Challenge</button>
+    <button class="daily-btn sec" onclick="viewDailyLeaderboard()">🏆 View Today's Leaderboard</button>
+    <button class="daily-btn sec" onclick="closeDailyModal()">✕ Back</button>
+  </div>
+</div>
+
+<!-- ── Daily Challenge: Already Played ── -->
+<div id="daily-played-modal">
+  <div class="daily-box">
+    <h2>📅 ALREADY PLAYED</h2>
+    <div class="daily-sub">You've already completed today's Daily Map Challenge, <strong id="played-name-display"></strong>.</div>
+    <div class="daily-result-box">
+      <div class="res-score" id="played-score-display">—</div>
+      <div class="res-label">turns to victory</div>
+      <div id="played-outcome-display" style="font-size:11px;color:#8A6030;margin-top:6px"></div>
+    </div>
+    <div class="daily-sub" style="margin-top:8px">Come back tomorrow for a new map!</div>
+    <button class="daily-btn" onclick="viewDailyLeaderboard()">🏆 View Today's Leaderboard</button>
+    <button class="daily-btn sec" onclick="closeDailyPlayed()">✕ Back</button>
+  </div>
+</div>
+
+<!-- ── Daily Challenge: Leaderboard ── -->
+<div id="daily-leaderboard-modal">
+  <div class="daily-box" style="max-width:480px">
+    <h2>🏆 DAILY LEADERBOARD</h2>
+    <div id="lb-date-badge" class="daily-date-badge"></div>
+    <div id="lb-map-name" style="font-family:Georgia,serif;font-size:12px;color:#7A5010;margin:8px 0 12px"></div>
+    <div id="lb-table-wrap">
+      <div style="font-family:Georgia,serif;font-size:12px;color:#8A6030;padding:16px">Loading leaderboard…</div>
+    </div>
+    <button class="daily-btn" onclick="closeDailyLeaderboard()" style="margin-top:8px">✕ Close</button>
+  </div>
+</div>
+
+<!-- ── Daily Indicator (shown during a daily game) ── -->
+<div class="daily-indicator" id="daily-game-indicator">📅 Daily Challenge</div>
+<div id="daily-saved-banner">✦ Score saved to leaderboard! ✦</div>
+
 <div id="mode-modal">
   <div id="mode-box">
     <h2>Welcome to Royal Convoy!</h2>
@@ -411,8 +529,11 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
     <p>Select Game Mode</p>
     <button class="mode-btn" onclick="startGame(false,false)">⚔ Player vs CPU — Normal Difficulty</button>
     <button class="mode-btn" onclick="startGame(false,true)" style="background:#EAD0C0;border-color:#8A4020">💀 Player vs CPU — Medieval Difficulty!</button>
+    <button class="mode-btn" onclick="startCpuTestDiceGame()" style="background:#E8F0E0;border-color:#3A6A20;margin-top:4px">🎲 PvCPU - TEST DICE</button>
     <button class="mode-btn" onclick="startGame(true,false)">👥 Player vs Player — Pass and Play</button>
+    <button class="mode-btn" onclick="startTestDiceGame()" style="background:#E8E0F8;border-color:#6A4A9A;margin-top:4px">🎲 PVP - TEST DICE</button>
     <button class="mode-btn" onclick="openOnlineLobby()" style="background:#D8ECD8;border-color:#3A8A4A;margin-top:4px">🌐 Online Multiplayer</button>
+    <button class="mode-btn" onclick="openDailyChallenge()" style="background:#EDD8A0;border-color:#C8A030;margin-top:8px;border-width:2px">📅 Daily Map Challenge</button>
   </div>
 </div>
 <div id="gold-flash">✦ CPU spends gold to move! ✦</div>
@@ -570,6 +691,19 @@ const MAPS=[
     BHO:ix(3,10),
     BLT:[{cell:ix(1,6),unit:'archer'},{cell:ix(1,3),unit:'merchant'}],
     ACT:new Set([ix(1,1),ix(5,1),ix(1,2),ix(5,2),ix(1,3),ix(5,3),ix(1,4),ix(2,4),ix(3,4),ix(4,4),ix(5,4),ix(1,5),ix(3,5),ix(5,5),ix(1,6),ix(2,6),ix(3,6),ix(4,6),ix(5,6),ix(2,7),ix(4,7),ix(1,8),ix(2,8),ix(3,8),ix(4,8),ix(5,8),ix(1,9),ix(3,9),ix(5,9),ix(1,10),ix(2,10),ix(3,10),ix(4,10),ix(5,10)])
+  },
+  {
+    id:'map6',name:'Brisk Journey',desc:'A short, quick map. Utilize the Royal Carriage to whisk your royals to the tourney.  Beware your enemy\'s longbow!',
+    units:['carriage','mercenary','shield','longbow','sword'],
+    SP1:ix(2,1),DP1:ix(4,9),SP2:ix(4,1),DP2:ix(2,9),
+    PRV1:new Set([ix(2,1),ix(2,2),ix(2,3),ix(4,8),ix(4,9)]),
+    PRV2:new Set([ix(4,1),ix(4,2),ix(4,3),ix(2,8),ix(2,9)]),
+    CAS:new Set([ix(3,5)]),
+    RRL:new Set([ix(3,3)]),
+    COI:new Set([ix(3,7)]),
+    BHO:null,
+    BLT:null,
+    ACT:new Set([ix(2,1),ix(4,1),ix(2,2),ix(4,2),ix(2,3),ix(3,3),ix(4,3),ix(2,4),ix(4,4),ix(2,5),ix(3,5),ix(4,5),ix(2,6),ix(4,6),ix(2,7),ix(3,7),ix(4,7),ix(2,8),ix(4,8),ix(2,9),ix(4,9)])
   }
 ];
 // Build TKR ACT (all 80 squares active)
@@ -1575,7 +1709,22 @@ function setSt(msg,chain){
 // HUMAN TURN
 // ═══════════════════════════════════════════
 var _pendingFt=0;
+var _testDiceMode=false;   // 'pvp' | 'cpu' | false
+var _testDiceResolve=null;
+function startTestDiceGame(){
+  _testDiceMode='pvp';
+  startGame(true,false);
+}
+function startCpuTestDiceGame(){
+  _testDiceMode='cpu';
+  startGame(false,false);
+}
+function pickTestDice(n){
+  document.getElementById('testdice-modal').style.display='none';
+  if(_testDiceResolve){var fn=_testDiceResolve;_testDiceResolve=null;fn(n);}
+}
 function startGame(p2human,hardMode){
+  _testDiceMode=(_testDiceMode==='pvp'&&p2human)?'pvp':(_testDiceMode==='cpu'&&!p2human)?'cpu':false;
   document.getElementById('mode-modal').classList.remove('show');
   _pendingP2h=p2human;
   _pendingHard=hardMode||false;
@@ -2329,6 +2478,33 @@ function doRoll(){
 function roll(){
   if(G.phase!=='roll'||G.anim||G.csm) return;
   if(G.turn===1&&!G.p2human) return;
+  if(_testDiceMode){
+    document.getElementById('testdice-modal').style.display='block';
+    _testDiceResolve=function(chosen){
+      var total=chosen;
+      var d1=chosen,d2=null;
+      if(!G.ift){d2=0;} // two-die mode: show chosen as d1, 0 as d2
+      G.d1=d1; G.d2=d2; G.roll=total;
+      setSt('',false); SFX.roll(); showDice(d1,d2,total,G.chain?'chn':null);
+      document.getElementById('btn-roll').disabled=true; updCP();
+      var od=G.ift?'':(d2===null?' (opening — one die)':'');
+      var who=G.turn===0?'p1':'p2';
+      if(total===0){
+        var m0=G.chain?'Chain ended — rolled 0.':'Rolled 0'+od+' — no move. Turn passes.';
+        addH(who,m0); setSt(m0,false); G.chain=false; G.snm=false; G.hN++;
+        setTimeout(endTurn,1200); return;
+      }
+      if(!movable(G.turn,total).length){
+        var mn=G.chain?'Chain ended — no valid moves.':'Rolled '+total+od+' — no valid moves. Turn passes.';
+        addH(who,mn); setSt(mn,false); G.chain=false; G.snm=false; G.hN++;
+        setTimeout(endTurn,1200); return;
+      }
+      G.phase='select'; G.rch=new Set(); G.snm=true;
+      var mc=G.chain?'Chain! Rolled '+total+' — choose a unit!':'Rolled '+total+od+' — choose a unit!';
+      addH(who,mc); setSt(mc,G.chain); render();
+    };
+    return;
+  }
   const{d1,d2,total}=doRoll();
   G.d1=d1; G.d2=d2; G.roll=total;
   setSt('',false); SFX.roll(); showDice(d1,d2,total,G.chain?'chn':null);
@@ -3205,6 +3381,39 @@ function cpuTurn(){
       }); return;
     }
   }
+  if(_testDiceMode==='cpu'){
+    // Show the picker, then resume CPU turn with the chosen roll
+    document.getElementById('testdice-modal').style.display='block';
+    _testDiceResolve=function(chosen){
+      var d1=chosen,d2=G.ift?null:0,total=chosen;
+      G.d1=d1; G.d2=d2; G.roll=total;
+      SFX.roll(); showDice(d1,d2,total,G.chain?'chn':null);
+      setTimeout(function(){
+        if(total===0){
+          var m0=p2lbl()+' rolled 0'+(G.chain?' — chain ends':' — no move')+'. Turn passes.';
+          addH('cpu',m0); G.hN++; G.chain=false; G.busy=false; setSt(m0,false); setTimeout(endTurn,1200); return;
+        }
+        var ch=cpuBest(total);
+        if(!ch){
+          var mn=p2lbl()+' rolled '+total+' — no valid moves. Turn passes.';
+          addH('cpu',mn); G.hN++; G.chain=false; G.busy=false; setSt(mn,false); setTimeout(endTurn,1200); return;
+        }
+        var ctok=ch.tok,cdest=ch.d,cer=eRoll(1,ctok,total);
+        var cmod=ctok.t==='knight'?' (+2)':ROY.has(ctok.t)?' (−1)':'';
+        var cod=d2===null?' (opening — one die)':'';
+        if(cer!==total) showDice(d1,d2,cer,'bon');
+        var cmc=p2lbl()+' rolled '+cer+cmod+cod+' — '+ctok.l+' to '+CC[cdest]+(G.chain?' ⚔':'');
+        addH('cpu',cmc); setSt(cmc,G.chain);
+        setTimeout(function(){
+          var cib=ctok.cell<0,coc=ctok.cell;
+          var cp=path1(1,ctok,cer,cib,cdest); ctok.cell=coc;
+          if(cp&&cp.length>1) animPath(ctok,cp.slice(0,cp.length-1),function(){ctok.cell=coc;G.busy=false;applyMove(1,ctok,cdest);});
+          else{G.busy=false;applyMove(1,ctok,cdest);}
+        },800);
+      },700);
+    };
+    return;
+  }
   const{d1,d2,total}=doRoll();
   G.d1=d1; G.d2=d2; G.roll=total;
   SFX.roll(); showDice(d1,d2,total,G.chain?'chn':null);
@@ -3375,9 +3584,12 @@ function showStatsScreen(pid){
     h+='<div id="hero-score">'+dunce.st.moves+' total moves</div>';
     h+='</div>';
   }
-  h+='<button class="ss-btn" onclick="closeStats()">Play Again</button>';
+  h+='<button class="ss-btn" onclick="closeStats()" id="stats-close-btn">Play Again</button>';
   el.innerHTML=h;
   el.style.display='block';
+  // Update button label for daily mode
+  var scb = document.getElementById('stats-close-btn');
+  if(scb) scb.textContent = _dailyMode ? '🏆 View Leaderboard' : 'Play Again';
 }
 
 function closeStats(){
@@ -3992,6 +4204,299 @@ document.addEventListener('DOMContentLoaded', function(){
   _patchRoll();
   _patchSelTok();
 });
+
+// ═══════════════════════════════════════════════════════════════════
+// DAILY MAP CHALLENGE
+// ═══════════════════════════════════════════════════════════════════
+
+var _dailyMode = false;
+var _dailyPlayerName = '';
+var _dailyDateKey = '';      // e.g. "2026-05-16"
+var _dailyMapId = '';
+var _dailyTurnCount = 0;
+var _dailyWon = false;
+
+// ── Determine today's map deterministically from the date ──
+function _getDailyDateKey(){
+  var now = new Date();
+  var y = now.getFullYear();
+  var m = String(now.getMonth()+1).padStart(2,'0');
+  var d = String(now.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+d;
+}
+
+function _getDailyMapForDate(dateKey){
+  // ── TESTING OVERRIDE: force map6 for today ──
+  var todayKey = _getDailyDateKey();
+  if(dateKey === todayKey){
+    var map6 = MAPS.find(function(m){ return m.id === 'map6'; });
+    if(map6) return map6;
+  }
+  // Normal rotation: simple hash of the date string → index into MAPS
+  var hash = 0;
+  for(var i=0;i<dateKey.length;i++) hash = (hash*31 + dateKey.charCodeAt(i)) & 0xFFFFFF;
+  var eligibleMaps = MAPS.filter(function(m){ return m.id !== 'map6'; });
+  return eligibleMaps[Math.abs(hash) % eligibleMaps.length];
+}
+
+function _formatDateDisplay(dateKey){
+  var parts = dateKey.split('-');
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[parseInt(parts[1])-1]+' '+parseInt(parts[2])+', '+parts[0];
+}
+
+// ── Open flow ──
+function openDailyChallenge(){
+  _dailyDateKey = _getDailyDateKey();
+
+  // If we already have a saved name in localStorage (best effort), pre-fill it
+  try{ var saved = localStorage.getItem('rc_daily_name'); if(saved) document.getElementById('daily-name-input').value = saved; }catch(e){}
+
+  document.getElementById('mode-modal').classList.remove('show');
+  document.getElementById('daily-name-modal').classList.add('show');
+}
+
+function closeDailyName(){
+  document.getElementById('daily-name-modal').classList.remove('show');
+  document.getElementById('mode-modal').classList.add('show');
+}
+
+function confirmDailyName(){
+  var name = (document.getElementById('daily-name-input').value||'').trim();
+  if(!name || name.length < 1){ alert('Please enter your name to continue.'); return; }
+  _dailyPlayerName = name;
+  try{ localStorage.setItem('rc_daily_name', name); }catch(e){}
+
+  document.getElementById('daily-name-modal').classList.remove('show');
+
+  // Check if already played today
+  _fbWrap(function(){
+    var dateKey = _dailyDateKey;
+    var safeKey = name.replace(/[^a-zA-Z0-9_\-]/g,'_');
+    var entryRef = window._fbRef(window._fbDb, 'daily/'+dateKey+'/scores/'+safeKey);
+    window._fbGet(entryRef).then(function(snapshot){
+      var existing = snapshot.val();
+      if(existing){
+        _showDailyAlreadyPlayed(existing);
+      } else {
+        _showDailyInfo();
+      }
+    }).catch(function(){
+      _showDailyInfo(); // if error, let them try
+    });
+  });
+}
+
+function _showDailyInfo(){
+  var map = _getDailyMapForDate(_dailyDateKey);
+  _dailyMapId = map.id;
+  document.getElementById('daily-date-badge').textContent = _formatDateDisplay(_dailyDateKey);
+  document.getElementById('daily-map-name').textContent = '🗺 ' + map.name;
+  document.getElementById('daily-map-desc').textContent = map.desc;
+  document.getElementById('daily-player-name-display').textContent = _dailyPlayerName;
+  document.getElementById('daily-modal').classList.add('show');
+}
+
+function closeDailyModal(){
+  document.getElementById('daily-modal').classList.remove('show');
+  document.getElementById('mode-modal').classList.add('show');
+}
+
+function _showDailyAlreadyPlayed(existing){
+  document.getElementById('played-name-display').textContent = _dailyPlayerName;
+  document.getElementById('played-score-display').textContent = existing.turns || '?';
+  document.getElementById('played-outcome-display').textContent = existing.outcome || '';
+  document.getElementById('daily-played-modal').classList.add('show');
+}
+
+function closeDailyPlayed(){
+  document.getElementById('daily-played-modal').classList.remove('show');
+  document.getElementById('mode-modal').classList.add('show');
+}
+
+// ── Start the daily challenge game ──
+function startDailyChallenge(){
+  document.getElementById('daily-modal').classList.remove('show');
+  _dailyMode = true;
+  _dailyWon = false;
+  _dailyTurnCount = 0;
+
+  // Set map
+  _selectedMapId = _dailyMapId;
+  loadMap(_selectedMapId);
+
+  // Select kingdom for player (they pick)
+  _pendingP2h = false;
+  _pendingHard = false;
+  _p1K = null; _p2K = null;
+
+  showKingP1(function(k1){
+    _p1K = k1;
+    // CPU picks randomly
+    var avail = KINGDOMS.filter(function(k){ return k.id !== _p1K.id; });
+    _p2K = avail[Math.floor(Math.random()*avail.length)];
+    // Skip map select — use today's daily map
+    G.p2human = false;
+    G.hardMode = false;
+    G.p1KingId = _p1K ? _p1K.id : '';
+    G.p2KingId = _p2K ? _p2K.id : '';
+    _goToCoinToss();
+    // Override coinDismiss to flag daily game start
+    document.getElementById('coin-go').onclick = function(){
+      document.getElementById('coin-modal').classList.remove('show');
+      hideSplashBg();
+      _startGame(_pendingFt);
+      // Show daily indicator
+      document.getElementById('daily-game-indicator').classList.add('show');
+    };
+  });
+}
+
+// ── Hook into endGame to detect daily win/loss ──
+var _origEndGameDaily = null;
+var _dailySavePromise = null;
+(function(){
+  var _origEG = endGame;
+  endGame = function(pid){
+    _origEG.apply(this, arguments);
+    if(_dailyMode){
+      _dailyWon = (pid === 0);
+      _dailyTurnCount = G.hN;
+      // Save score and store the promise so closeStats can wait for it
+      _dailySavePromise = _saveDailyScore(pid !== 0);
+    }
+  };
+})();
+
+// ── Save daily score to Firebase ──
+function _saveDailyScore(dnf){
+  if(!_dailyPlayerName) return Promise.resolve();
+  var safeKey = _dailyPlayerName.replace(/[^a-zA-Z0-9_\-]/g,'_');
+  var entry = {
+    name: _dailyPlayerName,
+    turns: dnf ? 9999 : _dailyTurnCount,
+    won: !dnf,
+    outcome: dnf ? 'Did not finish' : ('Victory in '+_dailyTurnCount+' turns'),
+    map: _dailyMapId,
+    kingdom: _p1K ? _p1K.short : '',
+    ts: Date.now()
+  };
+  return new Promise(function(resolve){
+    _fbWrap(function(){
+      var ref = window._fbRef(window._fbDb, 'daily/'+_dailyDateKey+'/scores/'+safeKey);
+      window._fbSet(ref, entry).then(function(){
+        console.log('[Daily] Score saved successfully:', entry);
+        if(!dnf){
+          var banner = document.getElementById('daily-saved-banner');
+          banner.classList.add('show');
+          setTimeout(function(){ banner.classList.remove('show'); }, 2600);
+        }
+        resolve();
+      }).catch(function(e){
+        console.warn('[Daily] Score save FAILED:', e.message || e);
+        resolve(); // still resolve so the flow continues
+      });
+    });
+  });
+}
+
+// ── Override closeStats to offer leaderboard after daily game ──
+var _origCloseStats = closeStats;
+closeStats = function(){
+  if(_dailyMode){
+    var savedDateKey = _dailyDateKey; // preserve before clearing
+    _dailyMode = false;
+    document.getElementById('daily-game-indicator').classList.remove('show');
+    document.getElementById('stats-screen').style.display='none';
+    // Wait for the Firebase save to finish before loading the leaderboard
+    var p = _dailySavePromise || Promise.resolve();
+    _dailySavePromise = null;
+    p.then(function(){
+      _dailyDateKey = savedDateKey; // restore so leaderboard can use it
+      viewDailyLeaderboard();
+    });
+  } else {
+    _origCloseStats.apply(this, arguments);
+  }
+};
+
+// ── Leaderboard ──
+function viewDailyLeaderboard(){
+  // Close any open daily modals
+  ['daily-modal','daily-played-modal','daily-name-modal'].forEach(function(id){
+    document.getElementById(id).classList.remove('show');
+  });
+
+  var dateKey = _dailyDateKey || _getDailyDateKey();
+  var map = _getDailyMapForDate(dateKey);
+
+  document.getElementById('lb-date-badge').textContent = _formatDateDisplay(dateKey);
+  document.getElementById('lb-map-name').textContent = '🗺 ' + map.name;
+  document.getElementById('lb-table-wrap').innerHTML = '<div style="font-family:Georgia,serif;font-size:12px;color:#8A6030;padding:16px">Loading leaderboard…</div>';
+  document.getElementById('daily-leaderboard-modal').classList.add('show');
+
+  _fbWrap(function(){
+    var ref = window._fbRef(window._fbDb, 'daily/'+dateKey+'/scores');
+    window._fbGet(ref).then(function(snapshot){
+      var data = snapshot.val();
+      _renderLeaderboard(data, dateKey);
+    }).catch(function(e){
+      console.warn('[Daily] Leaderboard fetch FAILED:', e && (e.message || e));
+      var errMsg = e && e.message ? (' ('+e.message+')') : '';
+      document.getElementById('lb-table-wrap').innerHTML = '<div style="font-family:Georgia,serif;font-size:12px;color:#AA3A2A;padding:16px">Could not load leaderboard'+errMsg+'.<br><span style="font-size:10px;color:#8A6030">Check browser console for details. This is often a Firebase security rules issue — make sure your Realtime Database rules allow read/write on the <code>daily/</code> path.</span></div>';
+    });
+  });
+}
+
+function _renderLeaderboard(data, dateKey){
+  if(!data || Object.keys(data).length === 0){
+    document.getElementById('lb-table-wrap').innerHTML =
+      '<div style="font-family:Georgia,serif;font-size:12px;color:#8A6030;padding:16px">No scores yet today — be the first!</div>';
+    return;
+  }
+
+  // Build sorted list (winners first by turns asc, then DNF)
+  var entries = Object.values(data);
+  entries.sort(function(a,b){
+    if(a.won && !b.won) return -1;
+    if(!a.won && b.won) return 1;
+    return (a.turns||9999) - (b.turns||9999);
+  });
+
+  var rankEmojis = ['🥇','🥈','🥉'];
+  var safeMe = _dailyPlayerName ? _dailyPlayerName.replace(/[^a-zA-Z0-9_\-]/g,'_') : '';
+
+  var html = '<table class="lb-table"><thead><tr><th>#</th><th style="text-align:left">Player</th><th>Kingdom</th><th>Turns</th><th>Result</th></tr></thead><tbody>';
+  var winnerRank = 0;
+  entries.forEach(function(e, i){
+    var isMe = (e.name === _dailyPlayerName);
+    var isWin = e.won;
+    if(isWin) winnerRank++;
+    var rank = isWin ? (rankEmojis[winnerRank-1] || winnerRank) : '—';
+    var rankCls = winnerRank===1?'rank-gold':winnerRank===2?'rank-silver':winnerRank===3?'rank-bronze':'';
+    html += '<tr'+(isMe?' class="me"':'')+'>'+
+      '<td><span class="'+rankCls+'">'+rank+'</span></td>'+
+      '<td>'+(isMe?'<b>'+_escHtml(e.name)+'</b> ⬅':_escHtml(e.name))+'</td>'+
+      '<td style="font-size:9px">'+_escHtml(e.kingdom||'')+'</td>'+
+      '<td>'+(isWin ? '<b>'+e.turns+'</b>' : '—')+'</td>'+
+      '<td style="font-size:9px;color:'+(isWin?'#3A6A10':'#AA3A2A')+'">'+_escHtml(e.outcome||'')+'</td>'+
+    '</tr>';
+  });
+  html += '</tbody></table>';
+  html += '<div style="font-family:Georgia,serif;font-size:10px;color:#A08040;margin-top:6px">'+entries.length+' player'+(entries.length!==1?'s':'')+' competed today</div>';
+  document.getElementById('lb-table-wrap').innerHTML = html;
+}
+
+function _escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function closeDailyLeaderboard(){
+  document.getElementById('daily-leaderboard-modal').classList.remove('show');
+  if(!_dailyMode){
+    document.getElementById('mode-modal').classList.add('show');
+  }
+}
 
 
 // Start on load
