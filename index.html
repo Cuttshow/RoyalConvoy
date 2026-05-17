@@ -314,6 +314,11 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
       <div class="map-icon">🗺</div>
       <div><div class="map-name">Brisk Journey</div><div class="map-desc">A short, quick map. Utilize the Royal Carriage to whisk your royals to the tourney.  Beware your enemy's longbow!</div></div>
     </button>
+    <div style="margin:8px 0"></div>
+    <button class="map-btn" onclick="selectMap('map7')">
+      <div class="map-icon">🗺</div>
+      <div><div class="map-name">Castle Corner</div><div class="map-desc">A trio of castles tower over a narrow pass. Many heroes made their name fighting for glory here.</div></div>
+    </button>
   </div>
 </div>
 <div id="king-modal">
@@ -704,6 +709,19 @@ const MAPS=[
     BHO:null,
     BLT:null,
     ACT:new Set([ix(2,1),ix(4,1),ix(2,2),ix(4,2),ix(2,3),ix(3,3),ix(4,3),ix(2,4),ix(4,4),ix(2,5),ix(3,5),ix(4,5),ix(2,6),ix(4,6),ix(2,7),ix(3,7),ix(4,7),ix(2,8),ix(4,8),ix(2,9),ix(4,9)])
+  },
+  {
+    id:'map7',name:'Castle Corner',desc:'A trio of castles tower over a narrow pass. Many heroes made their name fighting for glory here.',
+    units:['knight','siege','merchant','sword','thief','mercenary'],
+    SP1:ix(1,1),DP1:ix(5,9),SP2:ix(5,4),DP2:ix(1,10),
+    PRV1:new Set([ix(1,1),ix(5,8),ix(5,9)]),
+    PRV2:new Set([ix(5,4),ix(1,8),ix(1,9),ix(1,10)]),
+    CAS:new Set([ix(2,4),ix(4,4),ix(3,6)]),
+    RRL:new Set([ix(3,4),ix(3,8)]),
+    COI:new Set([ix(3,3)]),
+    BHO:null,
+    BLT:null,
+    ACT:new Set([ix(1,1),ix(1,2),ix(1,3),ix(3,3),ix(1,4),ix(2,4),ix(3,4),ix(4,4),ix(5,4),ix(3,5),ix(3,6),ix(3,7),ix(1,8),ix(2,8),ix(3,8),ix(4,8),ix(5,8),ix(1,9),ix(5,9),ix(1,10)])
   }
 ];
 // Build TKR ACT (all 80 squares active)
@@ -1101,7 +1119,7 @@ function canLand(pid,tok,dest){
   // Bandit capture rules: kings/queens/merchants cannot capture, archers only capture adjacent
   if(hasBandits()&&G_BANDIT.alive&&dest===G_BANDIT.cell){
     // Kings, Queens, and Merchants cannot capture the bandit
-    // Exception: Prince Callen's king can capture the bandit
+    // Exception: Prince Kallen's king can capture the bandit
     var callenKingBandit=tok.t==='king'&&kid==='callen';
     if((ROY.has(tok.t)||tok.t==='merchant')&&!callenKingBandit) return false;
     // Archer/Longbow can only capture from range, not direct landing
@@ -1113,7 +1131,7 @@ function canLand(pid,tok,dest){
   if(tok.t==='saboteur') return true;
   
   if(tok.t==='queen'&&kid==='kasey') return en.length===0&&(fr.length===0||fr.length===1);
-  // Prince Callen's king can capture enemy units like a standard melee unit
+  // Prince Kallen's king can capture enemy units like a standard melee unit
   if(tok.t==='king'&&kid==='callen'){
     const royEnemy=en.find(e=>ROY.has(e.t));
     if(royEnemy&&isRoyProt(opp,dest)) return false;
@@ -1177,7 +1195,7 @@ function eRoll(pid,tok,base){
   if(ROY.has(tok.t)){
     // If this royal is bonded to a carriage, it gets the carriage's +1 (no penalty)
     if(tok.bondedTo) return base+1;
-    // Prince Callen's units move without penalty
+    // Prince Kallen's units move without penalty
     var k=pid===0?_p1K:_p2K;
     if(k&&k.id==='callen') return base;
     return base-1;
@@ -1216,7 +1234,7 @@ function reach(pid,tok,steps,bench){
       for(const{cell:nb}of nbrs(c,false)) if(!bd.has(nb)&&!opp.has(nb)){bd.set(nb,d+1);bq.push(nb);}
     }
   }
-  // Prince Callen generous exit: king & queen also get BFS to finish
+  // Prince Kallen generous exit: king & queen also get BFS to finish
   if(ROY.has(tok.t)){
     var callenKid=pid===0?_p1K:_p2K;
     if(callenKid&&callenKid.id==='callen'){
@@ -1790,7 +1808,7 @@ var KINGDOMS=[
   {id:'kasey',  name:'Queen Kasey the Belligerent', short:'Queen Kasey', queenName:'Queen Kasey', kingName:'King Doug', bonus:'Queen captures friendly units for +1 coin', bg:'#FF8C00',stroke:'#CC6600', privBg:'#E8B870',privBorder:'#B06820'},
   {id:'necmo',  name:'King Grant the Swift',        short:'King Grant',  queenName:'Queen Laura',                      bonus:'Rolls 7-sided dice — chance at rolls of 4', bg:'#8B5E3C',stroke:'#5C3A20', privBg:'#D4A574',privBorder:'#A0724A'},
   {id:'aaron',  name:'King Aaron the Fierce',       short:'King Aaron',  queenName:'Queen Maddie',                     bonus:"Sword eliminates units regardless of lives remaining",  bg:'#FFD700',stroke:'#CCA800', privBg:'#FFF5B0',privBorder:'#E0CC50'},
-  {id:'callen', name:'Prince Callen the Mischievous', short:'Prince Callen', queenName:'Princess Peach', bonus:'Royals move without penalty & reach finish flexibly; King can capture enemies',   bg:'#B0D8D0',stroke:'#2A9A8A', privBg:'#D0E8E4',privBorder:'#2A9A8A'}
+  {id:'callen', name:'Prince Kallen the Mischievous', short:'Prince Kallen', queenName:'Princess Peach', bonus:'Royals move without penalty & reach finish flexibly; King can capture enemies',   bg:'#B0D8D0',stroke:'#2A9A8A', privBg:'#D0E8E4',privBorder:'#2A9A8A'}
 ];
 var _p1K=null,_p2K=null,_pendingP2h=false,_pendingHard=false;
 
@@ -4226,11 +4244,11 @@ function _getDailyDateKey(){
 }
 
 function _getDailyMapForDate(dateKey){
-  // ── TESTING OVERRIDE: force map6 for today ──
+  // ── TESTING OVERRIDE: force map7 for today ──
   var todayKey = _getDailyDateKey();
   if(dateKey === todayKey){
-    var map6 = MAPS.find(function(m){ return m.id === 'map6'; });
-    if(map6) return map6;
+    var map7 = MAPS.find(function(m){ return m.id === 'map7'; });
+    if(map7) return map7;
   }
   // Normal rotation: simple hash of the date string → index into MAPS
   var hash = 0;
