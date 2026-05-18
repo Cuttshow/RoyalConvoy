@@ -405,9 +405,9 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
 #net-indicator.show{opacity:1}
 
 /* ── Daily Challenge Styles ── */
-#daily-modal,#daily-played-modal,#daily-leaderboard-modal,#daily-name-modal{
+#daily-modal,#daily-played-modal,#daily-leaderboard-modal,#daily-name-modal,#throne-room-modal{
   display:none;position:fixed;inset:0;background:rgba(60,32,8,.82);z-index:210;align-items:center;justify-content:center}
-#daily-modal.show,#daily-played-modal.show,#daily-leaderboard-modal.show,#daily-name-modal.show{display:flex}
+#daily-modal.show,#daily-played-modal.show,#daily-leaderboard-modal.show,#daily-name-modal.show,#throne-room-modal.show{display:flex}
 .daily-box{background:#F5EDD6;border:2px solid #A07820;border-radius:10px;padding:28px 32px;max-width:420px;width:94%;text-align:center;font-family:Georgia,serif}
 .daily-box h2{font-size:17px;font-weight:700;color:#5C3D0A;letter-spacing:1.5px;margin-bottom:6px}
 .daily-box .daily-sub{font-size:11px;color:#8A6030;margin-bottom:16px;line-height:1.6}
@@ -495,6 +495,7 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
     <div class="daily-sub" style="margin-top:8px;margin-bottom:4px">Playing as: <strong id="daily-player-name-display" style="color:#5C3D0A"></strong></div>
     <button class="daily-btn" onclick="startDailyChallenge()">⚔ Begin Challenge</button>
     <button class="daily-btn sec" onclick="viewDailyLeaderboard()">🏆 View Today's Leaderboard</button>
+    <button class="daily-btn sec" onclick="viewThroneRoom()">👑 Throne Room</button>
     <button class="daily-btn sec" onclick="closeDailyModal()">✕ Back</button>
   </div>
 </div>
@@ -511,6 +512,7 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
     </div>
     <div class="daily-sub" style="margin-top:8px">Come back tomorrow for a new map!</div>
     <button class="daily-btn" onclick="viewDailyLeaderboard()">🏆 View Today's Leaderboard</button>
+    <button class="daily-btn sec" onclick="viewThroneRoom()">👑 Throne Room</button>
     <button class="daily-btn sec" onclick="closeDailyPlayed()">✕ Back</button>
   </div>
 </div>
@@ -525,6 +527,19 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
       <div style="font-family:Georgia,serif;font-size:12px;color:#8A6030;padding:16px">Loading leaderboard…</div>
     </div>
     <button class="daily-btn" onclick="closeDailyLeaderboard()" style="margin-top:8px">✕ Close</button>
+    <button class="daily-btn sec" onclick="viewThroneRoom()" style="margin-top:6px">👑 Throne Room</button>
+  </div>
+</div>
+
+<!-- ── Throne Room: All-Time Leaderboard ── -->
+<div id="throne-room-modal">
+  <div class="daily-box" style="max-width:500px">
+    <h2>👑 THRONE ROOM</h2>
+    <div class="daily-sub" style="margin-bottom:12px">All-time podium finishes across every Daily Map Challenge</div>
+    <div id="tr-table-wrap">
+      <div style="font-family:Georgia,serif;font-size:12px;color:#8A6030;padding:16px">Loading Throne Room…</div>
+    </div>
+    <button class="daily-btn" onclick="closeThroneRoom()" style="margin-top:8px">✕ Close</button>
   </div>
 </div>
 
@@ -4434,6 +4449,8 @@ function _saveDailyScore(dnf){
           banner.classList.add('show');
           setTimeout(function(){ banner.classList.remove('show'); }, 2600);
         }
+        // After saving, compute podium rank and update Throne Room
+        _recordThroneRoomFinish(safeKey, entry, dnf);
         resolve();
       }).catch(function(e){
         console.warn('[Daily] Score save FAILED:', e.message || e);
@@ -4441,6 +4458,44 @@ function _saveDailyScore(dnf){
       });
     });
   });
+}
+
+// ── Record podium finish in Throne Room ──
+function _recordThroneRoomFinish(safeKey, entry, dnf){
+  if(dnf) return; // Only winners get podium credit
+  // Read all of today's scores to determine rank
+  var scoresRef = window._fbRef(window._fbDb, 'daily/'+_dailyDateKey+'/scores');
+  window._fbGet(scoresRef).then(function(snapshot){
+    var data = snapshot.val();
+    if(!data) return;
+    // Sort winners by turns ascending
+    var entries = Object.values(data).filter(function(e){ return e.won; });
+    entries.sort(function(a,b){ return (a.turns||9999)-(b.turns||9999); });
+    // Find this player's rank (1-indexed)
+    var rank = -1;
+    for(var i=0;i<entries.length;i++){
+      if(entries[i].name === entry.name){ rank = i+1; break; }
+    }
+    if(rank < 1 || rank > 3) return; // Only track podium (top 3)
+    // Read existing throne room record for this player
+    var trRef = window._fbRef(window._fbDb, 'throne_room/'+safeKey);
+    window._fbGet(trRef).then(function(trSnap){
+      var existing = trSnap.val() || {name: entry.name, gold:0, silver:0, bronze:0};
+      // Prevent double-counting: track which dates we've already recorded
+      if(!existing.dates) existing.dates = {};
+      if(existing.dates[_dailyDateKey]) return; // Already recorded for this date
+      existing.dates[_dailyDateKey] = rank;
+      if(rank===1) existing.gold   = (existing.gold||0)+1;
+      if(rank===2) existing.silver = (existing.silver||0)+1;
+      if(rank===3) existing.bronze = (existing.bronze||0)+1;
+      existing.name = entry.name; // keep display name fresh
+      window._fbSet(trRef, existing).then(function(){
+        console.log('[ThroneRoom] Recorded rank '+rank+' for '+entry.name);
+      }).catch(function(e){
+        console.warn('[ThroneRoom] Write failed:', e.message||e);
+      });
+    }).catch(function(e){ console.warn('[ThroneRoom] Read failed:', e.message||e); });
+  }).catch(function(e){ console.warn('[ThroneRoom] Scores read failed:', e.message||e); });
 }
 
 // ── Override closeStats to offer leaderboard after daily game ──
@@ -4466,7 +4521,7 @@ closeStats = function(){
 // ── Leaderboard ──
 function viewDailyLeaderboard(){
   // Close any open daily modals
-  ['daily-modal','daily-played-modal','daily-name-modal'].forEach(function(id){
+  ['daily-modal','daily-played-modal','daily-name-modal','throne-room-modal'].forEach(function(id){
     document.getElementById(id).classList.remove('show');
   });
 
@@ -4536,6 +4591,70 @@ function _escHtml(s){
 
 function closeDailyLeaderboard(){
   document.getElementById('daily-leaderboard-modal').classList.remove('show');
+  if(!_dailyMode){
+    document.getElementById('mode-modal').classList.add('show');
+  }
+}
+
+// ── Throne Room (All-Time Leaderboard) ──
+function viewThroneRoom(){
+  // Close any open daily modals
+  ['daily-modal','daily-played-modal','daily-name-modal','daily-leaderboard-modal'].forEach(function(id){
+    document.getElementById(id).classList.remove('show');
+  });
+  document.getElementById('tr-table-wrap').innerHTML = '<div style="font-family:Georgia,serif;font-size:12px;color:#8A6030;padding:16px">Loading Throne Room…</div>';
+  document.getElementById('throne-room-modal').classList.add('show');
+
+  _fbWrap(function(){
+    var ref = window._fbRef(window._fbDb, 'throne_room');
+    window._fbGet(ref).then(function(snapshot){
+      var data = snapshot.val();
+      _renderThroneRoom(data);
+    }).catch(function(e){
+      console.warn('[ThroneRoom] Fetch failed:', e && (e.message||e));
+      document.getElementById('tr-table-wrap').innerHTML = '<div style="font-family:Georgia,serif;font-size:12px;color:#AA3A2A;padding:16px">Could not load Throne Room. Check your Firebase rules allow read on <code>throne_room/</code>.</div>';
+    });
+  });
+}
+
+function _renderThroneRoom(data){
+  if(!data || Object.keys(data).length === 0){
+    document.getElementById('tr-table-wrap').innerHTML =
+      '<div style="font-family:Georgia,serif;font-size:12px;color:#8A6030;padding:16px">The Throne Room is empty — be the first to claim a podium finish!</div>';
+    return;
+  }
+  // Build and sort entries by gold desc, silver desc, bronze desc
+  var entries = Object.values(data).map(function(e){
+    return { name: e.name||'?', gold: e.gold||0, silver: e.silver||0, bronze: e.bronze||0 };
+  });
+  entries.sort(function(a,b){
+    if(b.gold !== a.gold) return b.gold - a.gold;
+    if(b.silver !== a.silver) return b.silver - a.silver;
+    return b.bronze - a.bronze;
+  });
+
+  var html = '<table class="lb-table"><thead><tr>'+
+    '<th style="text-align:left">Player</th>'+
+    '<th>🥇</th><th>🥈</th><th>🥉</th><th>Total</th>'+
+    '</tr></thead><tbody>';
+  entries.forEach(function(e){
+    var isMe = (_dailyPlayerName && e.name === _dailyPlayerName);
+    var total = e.gold + e.silver + e.bronze;
+    html += '<tr'+(isMe?' class="me"':'')+'>'+
+      '<td>'+(isMe?'<b>'+_escHtml(e.name)+'</b> ⬅':_escHtml(e.name))+'</td>'+
+      '<td><span class="rank-gold">'+(e.gold||0)+'</span></td>'+
+      '<td><span class="rank-silver">'+(e.silver||0)+'</span></td>'+
+      '<td><span class="rank-bronze">'+(e.bronze||0)+'</span></td>'+
+      '<td style="font-weight:700;color:#5C3D0A">'+total+'</td>'+
+    '</tr>';
+  });
+  html += '</tbody></table>';
+  html += '<div style="font-family:Georgia,serif;font-size:10px;color:#A08040;margin-top:6px">'+entries.length+' player'+(entries.length!==1?'s':'')+' in the Throne Room</div>';
+  document.getElementById('tr-table-wrap').innerHTML = html;
+}
+
+function closeThroneRoom(){
+  document.getElementById('throne-room-modal').classList.remove('show');
   if(!_dailyMode){
     document.getElementById('mode-modal').classList.add('show');
   }
