@@ -315,9 +315,9 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
       <div><div class="map-name">Brisk Journey</div><div class="map-desc">A short, quick map. Utilize the Royal Carriage to whisk your royals to the tourney.  Beware your enemy's longbow!</div></div>
     </button>
     <div style="margin:8px 0"></div>
-    <button class="map-btn" onclick="selectMap('map7')">
+    <button class="map-btn" onclick="selectMap('map8')">
       <div class="map-icon">🗺</div>
-      <div><div class="map-name">Castle Corner</div><div class="map-desc">A trio of castles tower over a narrow pass. Many heroes made their name fighting for glory here.</div></div>
+      <div><div class="map-name">Menacing Meadows</div><div class="map-desc">The 2nd player has several subtle advantages in this race to the Tourney.  Collect the bonus units to even the score!</div></div>
     </button>
   </div>
 </div>
@@ -420,6 +420,10 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
 .daily-btn.sec{background:#F5EDD6;color:#5C3D0A}
 .daily-btn.sec:hover{background:#EAD8B0}
 .daily-btn:last-child{margin-bottom:0}
+.daily-kingdom-matchup{display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0 6px}
+.dkm-badge{display:inline-block;padding:5px 12px;border-radius:20px;border:2px solid;font-family:Georgia,serif;font-size:12px;font-weight:700;color:#3A2808}
+.dkm-vs{font-family:Georgia,serif;font-size:13px;font-weight:700;color:#8A6030;flex-shrink:0}
+.daily-challenge-text{font-family:Georgia,serif;font-size:12px;color:#3A2808;font-style:italic;background:#FFF8E0;border:1.5px solid #C8A030;border-radius:6px;padding:10px 14px;margin:4px 0 12px;line-height:1.5;text-align:center}
 #daily-name-input{width:100%;padding:10px 12px;border-radius:6px;border:1.5px solid #A07820;background:#FFF8EC;font-size:16px;font-family:Georgia,serif;color:#5C3D0A;text-align:center;margin-bottom:14px;box-sizing:border-box}
 #daily-name-input::placeholder{color:#C4A870}
 .lb-table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11px}
@@ -481,6 +485,8 @@ button.act.pri{background:#5C3D0A;color:#F5EDD6;border-color:#3A2008}button.act.
   <div class="daily-box">
     <h2>📅 DAILY MAP CHALLENGE</h2>
     <div id="daily-date-badge" class="daily-date-badge"></div>
+    <div id="daily-kingdom-matchup" class="daily-kingdom-matchup"></div>
+    <div id="daily-challenge-text" class="daily-challenge-text"></div>
     <div class="daily-sub">One attempt only. Win in as few turns as possible to top the leaderboard!</div>
     <div class="daily-map-card">
       <h3 id="daily-map-name"></h3>
@@ -711,17 +717,17 @@ const MAPS=[
     ACT:new Set([ix(2,1),ix(4,1),ix(2,2),ix(4,2),ix(2,3),ix(3,3),ix(4,3),ix(2,4),ix(4,4),ix(2,5),ix(3,5),ix(4,5),ix(2,6),ix(4,6),ix(2,7),ix(3,7),ix(4,7),ix(2,8),ix(4,8),ix(2,9),ix(4,9)])
   },
   {
-    id:'map7',name:'Castle Corner',desc:'A trio of castles tower over a narrow pass. Many heroes made their name fighting for glory here.',
-    units:['knight','siege','merchant','sword','thief','mercenary'],
-    SP1:ix(1,1),DP1:ix(5,9),SP2:ix(5,4),DP2:ix(1,10),
-    PRV1:new Set([ix(1,1),ix(5,8),ix(5,9)]),
-    PRV2:new Set([ix(5,4),ix(1,8),ix(1,9),ix(1,10)]),
-    CAS:new Set([ix(2,4),ix(4,4),ix(3,6)]),
-    RRL:new Set([ix(3,4),ix(3,8)]),
-    COI:new Set([ix(3,3)]),
+    id:'map8',name:'Menacing Meadows',desc:'The 2nd player has several subtle advantages in this race to the Tourney.  Collect the bonus units to even the score!',
+    units:['knight','archer','sword','soldier','king','queen'],
+    SP1:ix(1,1),DP1:ix(4,12),SP2:ix(5,2),DP2:ix(1,12),
+    PRV1:new Set([ix(1,1),ix(1,2),ix(1,3),ix(4,9),ix(4,10),ix(4,11),ix(4,12)]),
+    PRV2:new Set([ix(5,2),ix(5,3),ix(1,9),ix(1,10),ix(1,11),ix(1,12)]),
+    CAS:new Set([ix(3,5)]),
+    RRL:new Set([ix(1,4),ix(5,4)]),
+    COI:new Set([ix(2,10),ix(5,11)]),
     BHO:null,
-    BLT:null,
-    ACT:new Set([ix(1,1),ix(1,2),ix(1,3),ix(3,3),ix(1,4),ix(2,4),ix(3,4),ix(4,4),ix(5,4),ix(3,5),ix(3,6),ix(3,7),ix(1,8),ix(2,8),ix(3,8),ix(4,8),ix(5,8),ix(1,9),ix(5,9),ix(1,10)])
+    BLT:[{cell:ix(4,4),unit:'sword'},{cell:ix(1,6),unit:'archer'},{cell:ix(2,6),unit:'knight'},{cell:ix(1,7),unit:'sword'}],
+    ACT:new Set([ix(1,1),ix(1,2),ix(5,2),ix(1,3),ix(5,3),ix(1,4),ix(2,4),ix(3,4),ix(4,4),ix(5,4),ix(3,5),ix(1,6),ix(2,6),ix(3,6),ix(1,7),ix(1,8),ix(2,8),ix(3,8),ix(4,8),ix(1,9),ix(4,9),ix(1,10),ix(2,10),ix(4,10),ix(1,11),ix(4,11),ix(5,11),ix(1,12),ix(4,12)])
   }
 ];
 // Build TKR ACT (all 80 squares active)
@@ -1119,7 +1125,7 @@ function canLand(pid,tok,dest){
   // Bandit capture rules: kings/queens/merchants cannot capture, archers only capture adjacent
   if(hasBandits()&&G_BANDIT.alive&&dest===G_BANDIT.cell){
     // Kings, Queens, and Merchants cannot capture the bandit
-    // Exception: Prince Kallen's king can capture the bandit
+    // Exception: Prince Callen's king can capture the bandit
     var callenKingBandit=tok.t==='king'&&kid==='callen';
     if((ROY.has(tok.t)||tok.t==='merchant')&&!callenKingBandit) return false;
     // Archer/Longbow can only capture from range, not direct landing
@@ -1131,7 +1137,7 @@ function canLand(pid,tok,dest){
   if(tok.t==='saboteur') return true;
   
   if(tok.t==='queen'&&kid==='kasey') return en.length===0&&(fr.length===0||fr.length===1);
-  // Prince Kallen's king can capture enemy units like a standard melee unit
+  // Prince Callen's king can capture enemy units like a standard melee unit
   if(tok.t==='king'&&kid==='callen'){
     const royEnemy=en.find(e=>ROY.has(e.t));
     if(royEnemy&&isRoyProt(opp,dest)) return false;
@@ -1195,7 +1201,7 @@ function eRoll(pid,tok,base){
   if(ROY.has(tok.t)){
     // If this royal is bonded to a carriage, it gets the carriage's +1 (no penalty)
     if(tok.bondedTo) return base+1;
-    // Prince Kallen's units move without penalty
+    // Prince Callen's units move without penalty
     var k=pid===0?_p1K:_p2K;
     if(k&&k.id==='callen') return base;
     return base-1;
@@ -1234,7 +1240,7 @@ function reach(pid,tok,steps,bench){
       for(const{cell:nb}of nbrs(c,false)) if(!bd.has(nb)&&!opp.has(nb)){bd.set(nb,d+1);bq.push(nb);}
     }
   }
-  // Prince Kallen generous exit: king & queen also get BFS to finish
+  // Prince Callen generous exit: king & queen also get BFS to finish
   if(ROY.has(tok.t)){
     var callenKid=pid===0?_p1K:_p2K;
     if(callenKid&&callenKid.id==='callen'){
@@ -1808,7 +1814,7 @@ var KINGDOMS=[
   {id:'kasey',  name:'Queen Kasey the Belligerent', short:'Queen Kasey', queenName:'Queen Kasey', kingName:'King Doug', bonus:'Queen captures friendly units for +1 coin', bg:'#FF8C00',stroke:'#CC6600', privBg:'#E8B870',privBorder:'#B06820'},
   {id:'necmo',  name:'King Grant the Swift',        short:'King Grant',  queenName:'Queen Laura',                      bonus:'Rolls 7-sided dice — chance at rolls of 4', bg:'#8B5E3C',stroke:'#5C3A20', privBg:'#D4A574',privBorder:'#A0724A'},
   {id:'aaron',  name:'King Aaron the Fierce',       short:'King Aaron',  queenName:'Queen Maddie',                     bonus:"Sword eliminates units regardless of lives remaining",  bg:'#FFD700',stroke:'#CCA800', privBg:'#FFF5B0',privBorder:'#E0CC50'},
-  {id:'callen', name:'Prince Kallen the Mischievous', short:'Prince Kallen', queenName:'Princess Peach', bonus:'Royals move without penalty & reach finish flexibly; King can capture enemies',   bg:'#B0D8D0',stroke:'#2A9A8A', privBg:'#D0E8E4',privBorder:'#2A9A8A'}
+  {id:'callen', name:'Prince Callen the Mischievous', short:'Prince Callen', queenName:'Princess Peach', bonus:'Royals move without penalty & reach finish flexibly; King can capture enemies',   bg:'#B0D8D0',stroke:'#2A9A8A', privBg:'#D0E8E4',privBorder:'#2A9A8A'}
 ];
 var _p1K=null,_p2K=null,_pendingP2h=false,_pendingHard=false;
 
@@ -4227,6 +4233,15 @@ document.addEventListener('DOMContentLoaded', function(){
 // DAILY MAP CHALLENGE
 // ═══════════════════════════════════════════════════════════════════
 
+// ── DAILY CHALLENGE CONFIG — update this each day ──
+var DAILY_CONFIG = {
+  mapId:         'map8',       // map id to use today
+  playerKingId:  'aaron',      // kingdom id for the human player
+  cpuKingId:     'joshua',     // kingdom id for the CPU opponent
+  challengeText: "Utilize King Aaron's sword unit to eliminate King Joshua's units and pave the road to victory!"
+};
+// ── END DAILY CHALLENGE CONFIG ──
+
 var _dailyMode = false;
 var _dailyPlayerName = '';
 var _dailyDateKey = '';      // e.g. "2026-05-16"
@@ -4234,7 +4249,7 @@ var _dailyMapId = '';
 var _dailyTurnCount = 0;
 var _dailyWon = false;
 
-// ── Determine today's map deterministically from the date ──
+// ── Determine today's map from DAILY_CONFIG ──
 function _getDailyDateKey(){
   var now = new Date();
   var y = now.getFullYear();
@@ -4244,17 +4259,16 @@ function _getDailyDateKey(){
 }
 
 function _getDailyMapForDate(dateKey){
-  // ── TESTING OVERRIDE: force map7 for today ──
+  // Use DAILY_CONFIG map for today
   var todayKey = _getDailyDateKey();
   if(dateKey === todayKey){
-    var map7 = MAPS.find(function(m){ return m.id === 'map7'; });
-    if(map7) return map7;
+    var configMap = MAPS.find(function(m){ return m.id === DAILY_CONFIG.mapId; });
+    if(configMap) return configMap;
   }
-  // Normal rotation: simple hash of the date string → index into MAPS
+  // Fallback: hash-based rotation for historical dates (leaderboard display)
   var hash = 0;
   for(var i=0;i<dateKey.length;i++) hash = (hash*31 + dateKey.charCodeAt(i)) & 0xFFFFFF;
-  var eligibleMaps = MAPS.filter(function(m){ return m.id !== 'map6'; });
-  return eligibleMaps[Math.abs(hash) % eligibleMaps.length];
+  return MAPS[Math.abs(hash) % MAPS.length];
 }
 
 function _formatDateDisplay(dateKey){
@@ -4312,6 +4326,20 @@ function _showDailyInfo(){
   document.getElementById('daily-map-name').textContent = '🗺 ' + map.name;
   document.getElementById('daily-map-desc').textContent = map.desc;
   document.getElementById('daily-player-name-display').textContent = _dailyPlayerName;
+
+  // Kingdom matchup display
+  var p1k = KINGDOMS.find(function(k){ return k.id === DAILY_CONFIG.playerKingId; });
+  var p2k = KINGDOMS.find(function(k){ return k.id === DAILY_CONFIG.cpuKingId; });
+  var matchupEl = document.getElementById('daily-kingdom-matchup');
+  var challengeEl = document.getElementById('daily-challenge-text');
+  if(matchupEl && p1k && p2k){
+    matchupEl.innerHTML =
+      '<span class="dkm-badge" style="background:'+p1k.bg+';border-color:'+p1k.stroke+'">👑 '+p1k.short+'</span>' +
+      '<span class="dkm-vs">vs</span>' +
+      '<span class="dkm-badge" style="background:'+p2k.bg+';border-color:'+p2k.stroke+'">👑 '+p2k.short+'</span>';
+  }
+  if(challengeEl){ challengeEl.textContent = DAILY_CONFIG.challengeText; }
+
   document.getElementById('daily-modal').classList.add('show');
 }
 
@@ -4343,16 +4371,13 @@ function startDailyChallenge(){
   _selectedMapId = _dailyMapId;
   loadMap(_selectedMapId);
 
-  // Select kingdom for player (they pick)
+  // Auto-assign kingdoms from DAILY_CONFIG — no picking screen
   _pendingP2h = false;
   _pendingHard = false;
-  _p1K = null; _p2K = null;
+  _p1K = KINGDOMS.find(function(k){ return k.id === DAILY_CONFIG.playerKingId; }) || null;
+  _p2K = KINGDOMS.find(function(k){ return k.id === DAILY_CONFIG.cpuKingId; }) || null;
 
-  showKingP1(function(k1){
-    _p1K = k1;
-    // CPU picks randomly
-    var avail = KINGDOMS.filter(function(k){ return k.id !== _p1K.id; });
-    _p2K = avail[Math.floor(Math.random()*avail.length)];
+  (function(){
     // Skip map select — use today's daily map
     G.p2human = false;
     G.hardMode = false;
@@ -4367,7 +4392,7 @@ function startDailyChallenge(){
       // Show daily indicator
       document.getElementById('daily-game-indicator').classList.add('show');
     };
-  });
+  })();
 }
 
 // ── Hook into endGame to detect daily win/loss ──
